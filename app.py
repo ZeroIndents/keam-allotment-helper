@@ -1,12 +1,11 @@
-from flask import Flask, render_template, request, jsonify, redirect, url_for, flash, send_from_directory, session
-from datetime import datetime, timedelta
+from flask import Flask, render_template, request, jsonify, redirect, url_for, send_from_directory
+from datetime import timedelta
 import sqlite3
 import os
 import re
 import csv
 import io
 import time
-import hmac
 import secrets
 from functools import wraps
 from pypdf import PdfReader
@@ -20,9 +19,6 @@ app.config.update(
     PERMANENT_SESSION_LIFETIME=timedelta(hours=8),
     MAX_CONTENT_LENGTH=32 * 1024 * 1024,
 )
-
-ADMIN_USER = os.environ.get('ADMIN_USER', 'admin')
-ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', secrets.token_urlsafe(24))
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.environ.get('DB_PATH', os.path.join(BASE_DIR, 'colleges_v2.db'))
@@ -130,20 +126,14 @@ KEAM_COURSES = {code: f"{code} - {name}" for code, name in KEAM_COURSES.items()}
 STATS_PHASES = ('Phase1', 'Phase2', 'Phase3')
 STATS_PHASE_SQL = "AND phase IN ('Phase1','Phase2','Phase3')"
 
+
 def get_db_connection():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
 
-# --- ADMIN AUTH & TELEMETRY SAFETY ---
-def login_required(view):
-    @wraps(view)
-    def wrapped(*args, **kwargs):
-        if not session.get('admin_authed'):
-            return redirect(url_for('admin_login', next=request.path))
-        return view(*args, **kwargs)
-    return wrapped
 
+# --- RATE LIMITING (shared across gunicorn workers, DB-backed) ---
 def _client_ip():
     """Real client IP. Behind nginx/Cloudflare, remote_addr is always 127.0.0.1,
     so use the CF-Connecting-IP header set by cloudflared. Only trust it when a
@@ -153,11 +143,6 @@ def _client_ip():
         return request.headers.get('CF-Connecting-IP') or request.remote_addr or 'unknown'
     return request.remote_addr or 'unknown'
 
-
-def _clean_text(value, limit):
-    """Coerce to str, truncate, and strip control characters (XSS/log-injection defense)."""
-    text = str(value or '')[:limit]
-    return ''.join(c for c in text if c >= ' ' or c in '\n\t')
 
 def _rate_limit(bucket, limit):
     """DB-backed rate limit shared across gunicorn workers. Returns True if allowed.
@@ -190,130 +175,18 @@ def _rate_limit(bucket, limit):
             conn.close()
 
 
-def _telemetry_allowed(ip):
-    """120 telemetry events per IP per minute (sized for the per-page beacon volume)."""
-    return _rate_limit(f"tel:{ip}", 120)
-
-
 def _api_allowed(ip, limit):
     """Shared per-IP budget across all public data APIs."""
     return _rate_limit(f"api:{ip}", limit)
 
-_ANALYTICS_MIGRATED = False
-
-
-def _ensure_analytics_schema(cursor):
-    """Create/migrate the analytics_logs table (runs once per worker process)."""
-    global _ANALYTICS_MIGRATED
-    cursor.execute('''CREATE TABLE IF NOT EXISTS analytics_logs (id INTEGER PRIMARY KEY AUTOINCREMENT, timestamp DATETIME DEFAULT CURRENT_TIMESTAMP, ip_address TEXT, device_type TEXT, action_type TEXT, search_query TEXT, clicked_element TEXT);''')
-    if not _ANALYTICS_MIGRATED:
-        cols = {row[1] for row in cursor.execute("PRAGMA table_info(analytics_logs)")}
-        for col, ddl in (('page', "ALTER TABLE analytics_logs ADD COLUMN page TEXT"),
-                         ('referrer', "ALTER TABLE analytics_logs ADD COLUMN referrer TEXT")):
-            if col not in cols:
-                try:
-                    cursor.execute(ddl)
-                except sqlite3.OperationalError:
-                    pass
-        _ANALYTICS_MIGRATED = True
-
-
-def _login_failure_count(ip, window_seconds=300):
-    now = int(time.time())
-    conn = None
-    try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        cur.execute("CREATE TABLE IF NOT EXISTS admin_login_failures (ip TEXT, ts INTEGER)")
-        cur.execute("DELETE FROM admin_login_failures WHERE ts < ?", (now - 3600,))
-        cur.execute("SELECT COUNT(*) FROM admin_login_failures WHERE ip = ? AND ts >= ?",
-                    (ip, now - window_seconds))
-        return cur.fetchone()[0]
-    except Exception:
-        return 0
-    finally:
-        if conn:
-            conn.close()
-
-
-def _record_login_failure(ip):
-    conn = None
-    try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        cur.execute("INSERT INTO admin_login_failures (ip, ts) VALUES (?, ?)", (ip, int(time.time())))
-        conn.commit()
-    except Exception:
-        pass
-    finally:
-        if conn:
-            conn.close()
-
-
-def _clear_login_failures(ip):
-    conn = None
-    try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        cur.execute("DELETE FROM admin_login_failures WHERE ip = ?", (ip,))
-        conn.commit()
-    except Exception:
-        pass
-    finally:
-        if conn:
-            conn.close()
-
 
 @app.before_request
 def global_api_rate_limit():
-    """Cap the public data APIs per client IP (telemetry has its own limiter)."""
+    """Cap the public data APIs per client IP."""
     if request.path == '/data' or request.path.startswith('/api/'):
-        if request.path == '/api/telemetry':
-            return None
         if not _api_allowed(_client_ip(), 300):
             return jsonify({"error": "rate_limited"}), 429
     return None
-
-
-@app.route('/admin/login', methods=['GET', 'POST'])
-def admin_login():
-    ip = _client_ip()
-    next_url = request.args.get('next', '')
-    if request.method == 'POST':
-        token = session.get('_csrf')
-        form_token = request.form.get('_csrf', '')
-        if not token or not hmac.compare_digest(str(token), str(form_token)):
-            flash('Session expired — please reload and try again.', 'danger')
-            return redirect(url_for('admin_login'))
-        if _login_failure_count(ip) >= 8:
-            flash('Too many failed attempts. Try again in a few minutes.', 'danger')
-            return render_template('login.html', csrf_token=session.get('_csrf', ''), next=next_url), 429
-        username = request.form.get('username', '')
-        password = request.form.get('password', '')
-        if hmac.compare_digest(username, ADMIN_USER) and hmac.compare_digest(password, ADMIN_PASSWORD):
-            session.clear()
-            session['_csrf'] = secrets.token_hex(16)
-            session['admin_authed'] = True
-            session.permanent = True
-            _clear_login_failures(ip)
-            nxt = request.form.get('next') or next_url
-            return redirect(nxt if nxt.startswith('/') and not nxt.startswith('//') else url_for('admin_portal'))
-        _record_login_failure(ip)
-        flash('Invalid username or password.', 'danger')
-    if '_csrf' not in session:
-        session['_csrf'] = secrets.token_hex(16)
-    return render_template('login.html', csrf_token=session['_csrf'], next=next_url)
-
-
-@app.route('/admin/logout', methods=['POST'])
-def admin_logout():
-    session.clear()
-    return redirect(url_for('admin_login'))
-
-
-@app.route('/robots.txt')
-def robots():
-    return app.response_class("User-agent: *\nDisallow: /admin\n", mimetype='text/plain')
 
 
 # --- UI ROUTES ---
@@ -321,31 +194,32 @@ def robots():
 def statistics_portal():
     return render_template('statistics.html')
 
+
 @app.route('/')
 def main_allotment():
     return render_template('index.html')
+
 
 @app.route('/predictor')
 def rank_predictor():
     return render_template('predictor.html')
 
+
 @app.route('/resizer')
 def photo_resizer():
     return render_template('resizer.html')
 
-@app.route('/admin')
-@login_required
-def admin_portal():
-    return render_template('admin.html', csrf_token=session.get('_csrf', ''))
 
 @app.route('/trends')
 def trends_portal():
     # trends.html no longer exists — point visitors at the statistics dashboard.
     return redirect(url_for('statistics_portal'))
 
+
 @app.route('/sitemap.xml')
 def sitemap():
     return send_from_directory(BASE_DIR, 'sitemap.xml')
+
 
 # --- API ROUTES ---
 
@@ -389,8 +263,8 @@ def get_stats_kpi():
             "last_cutoff": last_cutoff,
             "top_branch": top_branch
         })
-    except Exception as e:
-        return jsonify({"total_colleges": 0, "total_courses": 0, "lowest_cutoff": 0, "last_cutoff": 0, "top_branch": "—", "error": "internal_error"})
+    except Exception:
+        return jsonify({"total_colleges": 0, "total_courses": 0, "lowest_cutoff": 0, "last_cutoff": 0, "top_branch": "—"})
     finally:
         if conn: conn.close()
 
@@ -488,8 +362,8 @@ def get_stats_phase_trends():
                 data[phase][row['course_name']] = row['cutoff']
 
         return jsonify({"phases": phases, "courses": top_courses, "data": data})
-    except Exception as e:
-        return jsonify({"phases": [], "courses": [], "data": {}, "error": "internal_error"})
+    except Exception:
+        return jsonify({"phases": [], "courses": [], "data": {}})
     finally:
         if conn: conn.close()
 
@@ -622,12 +496,13 @@ def get_database_stats():
     finally:
         if conn: conn.close()
 
+
 @app.route('/api/advanced-stats')
 def get_advanced_stats():
     college = request.args.get('college', '').strip()
     if not college:
         return jsonify({"error": "Missing college parameter"}), 400
-        
+
     # Read multi-select array inputs from parameters
     selected_courses = request.args.getlist('courses[]')
     selected_years = request.args.getlist('years[]')
@@ -650,31 +525,31 @@ def get_advanced_stats():
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-        
+
         query = """
             SELECT year, phase, candidate_category, course_name, seat_type,
                    MIN(rank) as cutoff_rank, COUNT(appl_no) as total_seats
-            FROM colleges 
+            FROM colleges
             WHERE college_name = ? AND rank > 0
         """
         params = [college]
-        
+
         if selected_courses and selected_courses[0] != '':
             query += " AND course_name IN ({})".format(','.join(['?'] * len(selected_courses)))
             params.extend(selected_courses)
-            
+
         if selected_years:
             query += " AND year IN ({})".format(','.join(['?'] * len(selected_years)))
             params.extend([int(y) for y in selected_years])
-            
+
         if selected_phases:
             query += " AND phase IN ({})".format(','.join(['?'] * len(selected_phases)))
             params.extend(selected_phases)
-            
+
         if selected_categories:
             query += " AND candidate_category IN ({})".format(','.join(['?'] * len(selected_categories)))
             params.extend(selected_categories)
-            
+
         if selected_seats:
             query += " AND seat_type IN ({})".format(','.join(['?'] * len(selected_seats)))
             params.extend(selected_seats)
@@ -682,31 +557,31 @@ def get_advanced_stats():
         if max_rank and max_rank.isdigit():
             query += " AND rank <= ?"
             params.append(int(max_rank))
-            
+
         query += " GROUP BY year, phase, candidate_category, course_name, seat_type ORDER BY course_name ASC, year ASC"
-        
+
         cursor.execute(query, params)
         rows = cursor.fetchall()
-        
+
         years_found = sorted(list(set(row['year'] for row in rows)))
         courses_found = sorted(list(set(row['course_name'] for row in rows)))
-        
+
         chart_series = {}
         table_matrix = []
-        
+
         for row in rows:
             yr = row['year']
             crs = row['course_name']
             cat = row['candidate_category']
             cutoff = row['cutoff_rank']
             seats = row['total_seats']
-            
+
             table_matrix.append({
                 "year": yr, "phase": row['phase'], "category": cat,
-                "course": crs, "seat_type": row['seat_type'], 
+                "course": crs, "seat_type": row['seat_type'],
                 "cutoff": cutoff, "seats": seats
             })
-            
+
             series_key = f"{yr} - {cat}"
             if series_key not in chart_series:
                 chart_series[series_key] = {}
@@ -718,10 +593,11 @@ def get_advanced_stats():
             "chart_series": chart_series,
             "table_matrix": table_matrix
         })
-    except Exception as e:
+    except Exception:
         return jsonify({"error": "internal_error"}), 500
     finally:
         if conn: conn.close()
+
 
 @app.route('/api/years')
 def get_available_years():
@@ -735,6 +611,7 @@ def get_available_years():
     finally:
         if conn: conn.close()
 
+
 @app.route('/api/categories')
 def get_categories():
     conn = None
@@ -747,6 +624,7 @@ def get_categories():
     except Exception: return jsonify([])
     finally:
         if conn: conn.close()
+
 
 @app.route('/api/colleges')
 def get_colleges():
@@ -767,6 +645,7 @@ def get_colleges():
     finally:
         if conn: conn.close()
 
+
 @app.route('/api/courses')
 def get_courses():
     conn = None
@@ -786,6 +665,7 @@ def get_courses():
     finally:
         if conn: conn.close()
 
+
 @app.route('/api/rank-summary')
 def get_rank_summary():
     college = request.args.get('college', '').strip()
@@ -804,95 +684,54 @@ def get_rank_summary():
         query += " GROUP BY candidate_category ORDER BY start_rank ASC"
         cursor.execute(query, params)
         return jsonify([{"category": row['candidate_category'], "start": row['start_rank'], "end": row['end_rank']} for row in cursor.fetchall()])
-    except Exception as e: return jsonify({"error": "internal_error"}), 500
+    except Exception:
+        return jsonify({"error": "internal_error"}), 500
     finally:
         if conn: conn.close()
+
 
 @app.route('/api/trends')
 def get_cutoff_trends():
     college = request.args.get('college', '').strip()
     course = request.args.get('course', '').strip()
-    
+
     if not college or not course:
         return jsonify({"error": "Missing college or course parameter"}), 400
-        
+
     conn = None
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-        
+
         query = """
-            SELECT year, candidate_category, MIN(rank) as cutoff_rank 
-            FROM colleges 
-            WHERE college_name = ? 
-              AND course_name = ? 
-              AND rank > 0 
-            GROUP BY year, candidate_category 
+            SELECT year, candidate_category, MIN(rank) as cutoff_rank
+            FROM colleges
+            WHERE college_name = ?
+              AND course_name = ?
+              AND rank > 0
+            GROUP BY year, candidate_category
             ORDER BY year ASC, cutoff_rank ASC
         """
         cursor.execute(query, [college, course])
         rows = cursor.fetchall()
-        
+
         trend_data = {}
         for row in rows:
             year = row['year']
             cat = row['candidate_category']
             cutoff = row['cutoff_rank']
-            
+
             if cat not in trend_data:
                 trend_data[cat] = {}
             trend_data[cat][year] = cutoff
-            
+
         return jsonify(trend_data)
-    except Exception as e:
+    except Exception:
         return jsonify({"error": "internal_error"}), 500
     finally:
         if conn:
             conn.close()
 
-@app.route('/api/telemetry', methods=['POST'])
-def log_user_telemetry():
-    conn = None
-    try:
-        payload = request.get_json(force=True, silent=True)
-        if not payload:
-            return jsonify({"status": "malformed"}), 400
-        if not _telemetry_allowed(_client_ip()):
-            return jsonify({"status": "rate_limited"}), 429
-        visitor_ip = _client_ip()
-        user_agent = request.headers.get('User-Agent', 'Unknown')
-        device = "Mobile" if any(x in user_agent.lower() for x in ["iphone", "android", "mobile"]) else "Desktop"
-        action = _clean_text(payload.get('action'), 64)
-        search = _clean_text(payload.get('search_data'), 500)
-        clicked = _clean_text(payload.get('clicked'), 200)
-        page = _clean_text(payload.get('page'), 64)
-        referrer = _clean_text(request.headers.get('Referer'), 200)
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        _ensure_analytics_schema(cursor)
-        cursor.execute('''INSERT INTO analytics_logs (ip_address, device_type, action_type, search_query, clicked_element, page, referrer) VALUES (?, ?, ?, ?, ?, ?, ?)''',
-                       (visitor_ip, device, action, search, clicked, page, referrer))
-        # Keep the table bounded (newest 20k rows only).
-        cursor.execute("DELETE FROM analytics_logs WHERE id NOT IN (SELECT id FROM analytics_logs ORDER BY id DESC LIMIT 20000)")
-        conn.commit()
-        return jsonify({"status": "success"}), 200
-    except Exception:
-        return jsonify({"status": "error"}), 500
-    finally:
-        if conn: conn.close()
-
-@app.route('/admin/analytics/data')
-@login_required
-def get_analytics_table():
-    conn = None
-    try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM analytics_logs ORDER BY timestamp DESC LIMIT 200")
-        return jsonify([dict(row) for row in cursor.fetchall()])
-    except Exception: return jsonify([])
-    finally:
-        if conn: conn.close()
 
 @app.route('/data')
 def data():
@@ -906,7 +745,7 @@ def data():
             length = min(max(int(request.args.get('length', 25)), 1), 1000)
         except (TypeError, ValueError):
             draw, start, length = 1, 0, 25
-        
+
         year = request.args.get('year', '').strip()
         phase_raw = request.args.get('phase', '').strip()
         college = request.args.get('college', '').strip()
@@ -919,14 +758,14 @@ def data():
         query = "SELECT * FROM colleges WHERE 1=1"
         params = []
 
-        if year: 
+        if year:
             query += " AND year = ?"
             params.append(int(year))
-            
+
         # ==========================================
         # MULTI-CHOICE PHASE FILTER
         # ==========================================
-        if phase_raw: 
+        if phase_raw:
             phases = [p.strip() for p in phase_raw.split(',') if p.strip()]
             if phases:
                 phase_conditions = []
@@ -938,15 +777,15 @@ def data():
                     else:
                         phase_conditions.append("phase = ?")
                         params.append(p)
-                
+
                 if phase_conditions:
                     query += " AND (" + " OR ".join(phase_conditions) + ")"
         else:
             # No phase selected → real allotment phases only (no trial/provisional)
             query += " AND phase IN ('Phase1','Phase2','Phase3')"
-                    
+
         # ==========================================
-        # MULTI-CHOICE CATEGORY FILTER (UPDATED FIX)
+        # MULTI-CHOICE CATEGORY FILTER
         # Using LIKE to match substrings and ignore case/trailing spaces
         # ==========================================
         if category_raw:
@@ -955,21 +794,21 @@ def data():
                 cat_conditions = ["UPPER(candidate_category) LIKE UPPER(?)"] * len(categories)
                 query += " AND (" + " OR ".join(cat_conditions) + ")"
                 params.extend([f"%{c}%" for c in categories])
-                
-        if college: 
+
+        if college:
             query += " AND college_name = ?"
             params.append(college)
-        if course: 
+        if course:
             query += " AND course_name = ?"
             params.append(course)
-        if seat: 
+        if seat:
             query += " AND UPPER(seat_type) LIKE UPPER(?)"
             params.append(f"%{seat}%")
-            
+
         if search_rank:
             query += " AND rank = ?"
             params.append(int(search_rank) if search_rank.isdigit() else 0)
-            
+
         if search_reg:
             query += " AND (register_number = ? OR appl_no = ?)"
             params.extend([search_reg, search_reg])
@@ -986,28 +825,29 @@ def data():
         query += " ORDER BY rank ASC LIMIT ? OFFSET ?"
         params.extend([length, start])
         cursor.execute(query, params)
-        
+
         data_list = []
         for row in cursor.fetchall():
             reg_val = row['register_number'] if row['register_number'] else (row['appl_no'] if row['appl_no'] else 'N/A')
             rank_val = row['rank'] if row['rank'] and int(row['rank']) > 0 else 'N/A'
 
             data_list.append({
-                'year': row['year'], 
-                'phase': row['phase'], 
+                'year': row['year'],
+                'phase': row['phase'],
                 'register_number': reg_val,
-                'rank': rank_val, 
-                'college_name': row['college_name'], 
+                'rank': rank_val,
+                'college_name': row['college_name'],
                 'course_name': row['course_name'],
                 'candidate_category': row['candidate_category'],
                 'seat_type': row['seat_type']
             })
-            
+
         return jsonify({"draw": draw, "recordsTotal": total_records, "recordsFiltered": total_filtered, "data": data_list})
-    except Exception as e: 
-        return jsonify({"draw": 1, "recordsTotal": 0, "recordsFiltered": 0, "data": [], "error": "internal_error"}), 500
+    except Exception:
+        return jsonify({"draw": 1, "recordsTotal": 0, "recordsFiltered": 0, "data": []}), 500
     finally:
         if conn: conn.close()
+
 
 @app.route('/api/migrations')
 def get_migrations():
@@ -1091,10 +931,11 @@ def get_migrations():
             "top_destinations": [{"college": c, "count": n} for c, n in top_destinations],
             "top_sources": [{"college": c, "count": n} for c, n in top_sources]
         })
-    except Exception as e:
+    except Exception:
         return jsonify({"error": "internal_error"}), 500
     finally:
         if conn: conn.close()
+
 
 @app.after_request
 def add_security_headers(resp):

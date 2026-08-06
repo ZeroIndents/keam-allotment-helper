@@ -20,3 +20,10 @@ college_project_archive/
 # Environment / secrets
 college.env
 .env
+
+# Live deployment variant (kept on server only)
+app_live.py
+
+# Server-only templates (kept on server only)
+templates/admin.html
+templates/login.html
