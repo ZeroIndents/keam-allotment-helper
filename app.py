@@ -939,14 +939,21 @@ def add_security_headers(resp):
     resp.headers.setdefault('Referrer-Policy', 'strict-origin-when-cross-origin')
     resp.headers.setdefault('Strict-Transport-Security', 'max-age=31536000; includeSubDomains')
     resp.headers.setdefault('Permissions-Policy', 'geolocation=(), microphone=(), camera=()')
+    # Never cache HTML pages: stale copies keep old CSP headers that can
+    # block CDN scripts (caused blank tables after the CSP was tightened).
+    if resp.content_type.startswith('text/html'):
+        resp.headers.setdefault('Cache-Control', 'no-cache, no-store, must-revalidate')
+        resp.headers.setdefault('Pragma', 'no-cache')
     resp.headers.setdefault(
         'Content-Security-Policy',
         "default-src 'self'; script-src 'self' 'unsafe-inline' https://code.jquery.com "
-        "https://cdn.jsdelivr.net https://static.cloudflareinsights.com; style-src 'self' "
-        "'unsafe-inline' https://cdn.jsdelivr.net https://code.jquery.com; img-src 'self' data: blob: https:; "
-        "font-src 'self' https://cdn.jsdelivr.net; connect-src 'self' blob: "
-        "https://static.cloudflareinsights.com; frame-ancestors 'none'; base-uri 'self'; object-src 'none'; "
-        "worker-src 'self' blob:"
+        "https://cdn.jsdelivr.net https://cdn.datatables.net "
+        "https://cdnjs.cloudflare.com https://static.cloudflareinsights.com; style-src 'self' "
+        "'unsafe-inline' https://cdn.jsdelivr.net https://code.jquery.com https://cdn.datatables.net "
+        "https://cdnjs.cloudflare.com; img-src 'self' data: blob: https:; "
+        "font-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; connect-src 'self' blob: "
+        "https://static.cloudflareinsights.com https://cloudflareinsights.com; frame-ancestors 'none'; base-uri 'self'; object-src 'none'; "
+        "worker-src 'self' blob: https://cdnjs.cloudflare.com"
     )
     return resp
 

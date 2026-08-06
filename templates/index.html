@@ -106,6 +106,10 @@
         .ts-dropdown .option { color: #0f172a !important; }
         [data-bs-theme="light"] .ts-dropdown .option:hover { background-color: #eef2ff !important; }
         .ts-dropdown .active, .ts-dropdown .option.active { background-color: #0d6efd !important; color: #ffffff !important; }
+        /* Dropdown lists must paint above headings/cards below */
+        .ts-wrapper { position: relative; }
+        .ts-dropdown { z-index: 3000 !important; }
+        .filter-card { position: relative; z-index: 30; }
         [data-bs-theme="dark"] .text-gradient { background: linear-gradient(90deg, #6ea8fe, #8c68cd); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         /* Table glass wrapper */
         .table-glass {
@@ -225,7 +229,7 @@
             </div>
         </div>
         
-        <div class="card shadow-sm p-3 p-md-4 mb-4 rounded-3 border-0">
+        <div class="card shadow-sm p-3 p-md-4 mb-4 rounded-3 border-0 filter-card">
             <div class="row g-2 g-md-3">
                 <div class="col-6 col-md-1">
                     <label class="form-label small font-weight-bold mb-1 text-secondary">Year</label>

@@ -4,62 +4,187 @@
     <title>KEAM 2026 Rank Predictor | 5:3:2 Normalization</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Predict your KEAM 2026 rank using the official CEE 5:3:2 board normalization formula, then see how your bracket compares to real 2026 cutoffs.">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <style>
-        .text-gradient { background: linear-gradient(90deg, #198754, #20c997); -webkit-background-clip: text; -webkit-text-fill-color: transparent; display: inline-block; }
-        [data-bs-theme="dark"] .card { background-color: #1a1a1a; border-color: #2b2b2b; }
-        .score-display { font-size: 3rem; font-weight: 800; letter-spacing: -1px; }
+        :root { scroll-behavior: smooth; }
+        body {
+            font-size: 14px;
+            color: var(--bs-body-color);
+            position: relative;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        /* Animated gradient background (matches the rest of the site) */
+        body {
+            background: linear-gradient(-45deg, #eef2ff, #e0f2fe, #f0fdfa, #faf5ff, #eff6ff);
+            background-size: 400% 400%;
+            animation: gradientShift 18s ease infinite;
+        }
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        [data-bs-theme="dark"] body {
+            background: linear-gradient(-45deg, #0a0e1a, #0f172a, #131c31, #1a1030, #0d1424);
+            background-size: 400% 400%;
+            animation: gradientShift 20s ease infinite;
+        }
+        .bg-blobs { position: fixed; inset: 0; z-index: -2; overflow: hidden; pointer-events: none; }
+        .blob { position: absolute; border-radius: 50%; filter: blur(70px); opacity: 0.5; animation: floatBlob 20s ease-in-out infinite; }
+        .blob-1 { width: 420px; height: 420px; background: radial-gradient(circle, #93c5fd, transparent 70%); top: -80px; left: -60px; }
+        .blob-2 { width: 360px; height: 360px; background: radial-gradient(circle, #a7f3d0, transparent 70%); top: 40%; right: -80px; animation-delay: -5s; }
+        .blob-3 { width: 400px; height: 400px; background: radial-gradient(circle, #ddd6fe, transparent 70%); bottom: -100px; left: 30%; animation-delay: -10s; }
+        @keyframes floatBlob {
+            0%,100% { transform: translate(0,0) scale(1); }
+            33% { transform: translate(40px,-30px) scale(1.1); }
+            66% { transform: translate(-30px,40px) scale(0.95); }
+        }
+        [data-bs-theme="dark"] .blob { opacity: 0.35; filter: blur(80px); }
+        [data-bs-theme="dark"] .blob-1 { background: radial-gradient(circle, #1e40af, transparent 70%); }
+        [data-bs-theme="dark"] .blob-2 { background: radial-gradient(circle, #065f46, transparent 70%); }
+        [data-bs-theme="dark"] .blob-3 { background: radial-gradient(circle, #5b21b6, transparent 70%); }
+
+        /* Twinkling stars (dark mode only) */
+        .stars { position: fixed; inset: 0; z-index: -1; pointer-events: none; opacity: 0; transition: opacity 0.6s; }
+        [data-bs-theme="dark"] .stars { opacity: 1; }
+        .star { position: absolute; background: #fff; border-radius: 50%; animation: twinkle 3s ease-in-out infinite; }
+        @keyframes twinkle { 0%,100% { opacity: 0.15; } 50% { opacity: 0.9; } }
+
+        .text-gradient {
+            background: linear-gradient(90deg, #198754, #20c997);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: inline-block;
+        }
+        [data-bs-theme="dark"] .text-gradient { background: linear-gradient(90deg, #6ee7b7, #34d399); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+        /* Glass cards */
+        .card {
+            background: rgba(255,255,255,0.72) !important;
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid rgba(255,255,255,0.5) !important;
+            box-shadow: 0 8px 32px rgba(31,38,135,0.08) !important;
+            transition: transform 0.25s ease, box-shadow 0.25s ease;
+        }
+        [data-bs-theme="dark"] .card { background: rgba(23,32,50,0.72) !important; border-color: #2b3a52 !important; }
+
+        .score-display { font-size: 3.2rem; font-weight: 800; letter-spacing: -1px; font-variant-numeric: tabular-nums; }
+
+        /* Live meter */
+        .meter-track { height: 14px; border-radius: 999px; background: rgba(148,163,184,0.25); overflow: hidden; }
+        .meter-fill { height: 100%; width: 0%; border-radius: 999px; background: linear-gradient(90deg, #198754, #20c997); transition: width 0.4s ease; }
+        [data-bs-theme="dark"] .meter-track { background: rgba(71,85,105,0.4); }
+
+        .rank-badge { font-size: 1.9rem; font-weight: 900; letter-spacing: -0.5px; }
+        .chip { font-size: 12px; font-weight: 700; padding: 6px 14px; border-radius: 999px; }
+
+        .anim-in { animation: animIn 0.6s cubic-bezier(0.22,1,0.36,1) both; }
+        @keyframes animIn { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
+        .anim-in-1 { animation-delay: 0.05s; }
+        .anim-in-2 { animation-delay: 0.15s; }
+        .anim-in-3 { animation-delay: 0.25s; }
+
+        #themeToggleBtn { transition: transform 0.4s ease; }
+        #themeToggleBtn:hover { transform: rotate(-8deg) scale(1.05); }
+
+        .reach-yes { color: #198754; font-weight: 700; }
+        .reach-no { color: #dc3545; font-weight: 700; }
+
+        @media (max-width: 767.98px) {
+            .form-control, .form-select { font-size: 16px !important; }
+            .score-display { font-size: 2.6rem; }
+        }
     </style>
 </head>
-<body class="bg-body-tertiary pb-5">
+<body>
 
-    <div class="container mt-4" style="max-width: 800px;">
-        <div class="mb-4">
-            <a href="/" class="btn btn-sm btn-outline-secondary rounded-pill mb-3"><i class="bi bi-arrow-left me-1"></i> Back to Allotment Helper</a>
-            <h2 class="fw-bold mb-1"><i class="bi bi-calculator me-2 text-success"></i><span class="text-gradient">KEAM Rank Predictor</span></h2>
-            <p class="text-secondary">Based on the official 2026 CEE 5:3:2 Board Normalization Formula and Brilliant Pala trend analysis.</p>
+    <!-- Animated background layers -->
+    <div class="bg-blobs">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+    </div>
+    <div class="stars" id="starsLayer"></div>
+
+    <div class="container mt-3 mt-md-4 mb-5" style="max-width: 800px;">
+        <div class="d-flex justify-content-between align-items-start mb-3">
+            <a href="/" class="btn btn-sm btn-outline-secondary rounded-pill"><i class="bi bi-arrow-left me-1"></i> Back to Allotment Helper</a>
+            <button id="themeToggleBtn" class="btn btn-outline-secondary px-3 rounded-pill shadow-sm">
+                <i id="themeIcon" class="bi bi-moon-stars-fill me-2"></i><span id="themeText">Dark</span>
+            </button>
         </div>
 
-        <div class="card shadow-sm border-0 rounded-4 mb-4">
+        <div class="text-center mb-4 anim-in">
+            <h1 class="fw-bold mb-2" style="font-size: 2.1rem;">
+                <i class="bi bi-calculator me-2 text-success"></i><span class="text-gradient">KEAM Rank Predictor</span>
+            </h1>
+            <p class="text-secondary mx-auto" style="max-width: 620px; line-height: 1.6;">
+                Enter your marks and see your expected <b>State Merit rank bracket</b> — based on the official CEE 5:3:2 board normalization and Brilliant Pala 2026 trend analysis.
+            </p>
+            <div class="d-flex flex-wrap justify-content-center gap-2">
+                <span class="chip bg-success-subtle text-success border border-success-subtle"><i class="bi bi-pencil-square me-1"></i> Board marks → /300</span>
+                <span class="chip bg-primary-subtle text-primary border border-primary-subtle"><i class="bi bi-file-earmark-text me-1"></i> KEAM score → /300</span>
+                <span class="chip bg-warning-subtle text-warning-emphasis border border-warning-subtle"><i class="bi bi-123 me-1"></i> Total index → /600</span>
+            </div>
+        </div>
+
+        <div class="card shadow-sm border-0 rounded-4 mb-4 anim-in anim-in-1">
             <div class="card-body p-4 p-md-5">
-                <form id="predictorForm">
+                <form id="predictorForm" novalidate>
                     <div class="row g-4">
                         <div class="col-md-6">
-                            <label class="form-label fw-bold small text-uppercase text-muted">KEAM Entrance Score</label>
+                            <label class="form-label fw-bold small text-uppercase text-muted" for="keamScore">KEAM Entrance Score</label>
                             <div class="input-group">
-                                <input type="number" class="form-control form-control-lg bg-success-subtle border-success text-success fw-bold" id="keamScore" placeholder="e.g. 210" min="10" max="300" required>
+                                <input type="number" class="form-control form-control-lg bg-success-subtle border-success text-success fw-bold" id="keamScore" placeholder="e.g. 210" min="0" max="300" step="0.5" required>
                                 <span class="input-group-text bg-body">/ 300</span>
                             </div>
-                            <div class="form-text">Your normalized Entrance Exam mark.</div>
+                            <div class="form-text">Your normalized entrance exam mark.</div>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-bold small text-uppercase text-muted">Class 12 Board</label>
+                            <label class="form-label fw-bold small text-uppercase text-muted" for="boardSelect">Class 12 Board</label>
                             <select id="boardSelect" class="form-select form-select-lg">
-                                <option value="dhse">Kerala State (DHSE) - Out of 120</option>
-                                <option value="cbse">CBSE / ISC - Out of 100</option>
+                                <option value="dhse">Kerala State (DHSE) — out of 120</option>
+                                <option value="cbse">CBSE / ISC — out of 100</option>
                             </select>
                             <div class="form-text">Sets the maximum marks per subject.</div>
                         </div>
-                        
+
                         <div class="col-12"><hr class="my-2"></div>
-                        <div class="col-12"><h6 class="fw-bold text-primary mb-0"><i class="bi bi-journal-text me-2"></i>Board Marks Obtained</h6></div>
+                        <div class="col-12">
+                            <h6 class="fw-bold text-primary mb-0"><i class="bi bi-journal-text me-2"></i>Board Marks Obtained <small class="text-muted fw-normal">(max <span id="maxMarkText">120</span> each)</small></h6>
+                        </div>
 
                         <div class="col-md-4">
-                            <label class="form-label fw-bold">Mathematics <span class="badge bg-danger ms-1">50% Wt.</span></label>
-                            <input type="number" class="form-control board-input" id="mathMarks" required>
+                            <label class="form-label fw-bold" for="mathMarks">Mathematics <span class="badge bg-danger ms-1">50% wt.</span></label>
+                            <input type="number" class="form-control board-input form-control-lg" id="mathMarks" min="0" step="0.5" required>
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label fw-bold">Physics <span class="badge bg-secondary ms-1">30% Wt.</span></label>
-                            <input type="number" class="form-control board-input" id="phyMarks" required>
+                            <label class="form-label fw-bold" for="phyMarks">Physics <span class="badge bg-primary ms-1">30% wt.</span></label>
+                            <input type="number" class="form-control board-input form-control-lg" id="phyMarks" min="0" step="0.5" required>
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label fw-bold">Chemistry <span class="badge bg-secondary ms-1">20% Wt.</span></label>
-                            <input type="number" class="form-control board-input" id="chemMarks" required>
+                            <label class="form-label fw-bold" for="chemMarks">Chemistry <span class="badge bg-info ms-1">20% wt.</span></label>
+                            <input type="number" class="form-control board-input form-control-lg" id="chemMarks" min="0" step="0.5" required>
+                        </div>
+
+                        <!-- Live meter -->
+                        <div class="col-12 mt-3">
+                            <div class="d-flex justify-content-between align-items-end mb-1">
+                                <span class="small fw-bold text-muted text-uppercase">Your Total KEAM Index (live preview)</span>
+                                <span class="fw-bold text-success" id="liveIndexText">0 <small class="text-muted">/ 600</small></span>
+                            </div>
+                            <div class="meter-track"><div class="meter-fill" id="liveMeter"></div></div>
+                            <div class="form-text mt-1">Watch your score update as you type — <b>600</b> is the maximum possible.</div>
                         </div>
 
                         <div class="col-12 mt-4">
-                            <button type="submit" class="btn btn-success btn-lg w-100 fw-bold rounded-pill shadow-sm">Calculate Expected Rank</button>
+                            <button type="submit" class="btn btn-success btn-lg w-100 fw-bold rounded-pill shadow-sm">
+                                <i class="bi bi-stars me-2"></i>Calculate Expected Rank
+                            </button>
                         </div>
                     </div>
                 </form>
@@ -67,21 +192,87 @@
         </div>
 
         <!-- Result Section -->
-        <div id="resultBox" class="card shadow border-success border-2 rounded-4 text-center p-5" style="display: none;">
-            <h5 class="text-muted fw-bold text-uppercase mb-1">Your Total KEAM Index</h5>
+        <div id="resultBox" class="card shadow border-success border-2 rounded-4 text-center p-4 p-md-5 mb-4" style="display: none;">
+            <div class="chip bg-success-subtle text-success border border-success-subtle mb-3">🎯 Your prediction</div>
+            <h5 class="text-muted fw-bold text-uppercase mb-1">Total KEAM Index</h5>
             <div class="score-display text-dark"><span id="finalScoreText">0</span><span class="fs-4 text-muted"> / 600</span></div>
             <p class="text-secondary small mb-4">Board Normalization: <strong id="boardScoreText">0</strong> + KEAM Score: <strong id="keamScoreEcho">0</strong></p>
-            
+
             <div class="bg-success-subtle p-4 rounded-3">
-                <h6 class="text-success fw-bold text-uppercase mb-2">Estimated State Merit Rank</h6>
-                <h2 class="display-5 fw-bold text-success mb-0" id="rankText">Calculating...</h2>
+                <h6 class="text-success fw-bold text-uppercase mb-2">Estimated State Merit Rank Bracket</h6>
+                <h2 class="rank-badge text-success mb-0" id="rankText">Calculating...</h2>
             </div>
-            <p class="text-muted small mt-3 mb-0"><i class="bi bi-info-circle me-1"></i> Prediction based on Brilliant Pala 2026 data. Actual ranks will fluctuate based on tie-breakers.</p>
+            <p class="text-muted small mt-3 mb-0" id="rankMeaning"></p>
         </div>
+
+        <!-- Compare with real 2026 cutoffs -->
+        <div id="compareBox" class="card shadow-sm border-0 rounded-4 mb-4" style="display: none;">
+            <div class="card-body p-4 p-md-5">
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-1">
+                    <h2 class="h6 fw-bold mb-0"><i class="bi bi-crosshair me-2 text-primary"></i>How Your Bracket Compares to Real 2026 Cutoffs</h2>
+                    <span class="chip bg-primary-subtle text-primary border border-primary-subtle" id="compareYearTag">State Merit · 2026</span>
+                </div>
+                <p class="text-xs text-muted small mb-3">Closing rank = the rank of the <b>last student admitted</b> in 2026. If your predicted bracket is better (smaller) than a college's closing rank, that college was <b>within your reach</b>.</p>
+
+                <div class="d-flex flex-wrap gap-2 mb-3">
+                    <span class="small fw-bold text-muted text-uppercase align-self-center">Course:</span>
+                    <button type="button" class="btn btn-sm btn-outline-primary rounded-pill course-chip active" data-course="CS">CS — Computer Science</button>
+                    <button type="button" class="btn btn-sm btn-outline-primary rounded-pill course-chip" data-course="EC">EC — Electronics</button>
+                    <button type="button" class="btn btn-sm btn-outline-primary rounded-pill course-chip" data-course="ME">ME — Mechanical</button>
+                    <button type="button" class="btn btn-sm btn-outline-primary rounded-pill course-chip" data-course="EE">EE — Electrical</button>
+                    <button type="button" class="btn btn-sm btn-outline-primary rounded-pill course-chip" data-course="CE">CE — Civil</button>
+                </div>
+
+                <div id="compareLoading" class="text-center text-muted py-4 small"><i class="bi bi-hourglass-split me-2"></i>Loading 2026 cutoffs…</div>
+                <div class="table-responsive" id="compareTableWrap" style="display:none;">
+                    <table class="table table-sm align-middle mb-0">
+                        <thead class="text-body-emphasis" style="background: rgba(148,163,184,0.12);">
+                            <tr>
+                                <th class="py-2">College</th>
+                                <th class="py-2 text-center">Opening (Topper)</th>
+                                <th class="py-2 text-center">Cutoff (Last Admitted)</th>
+                                <th class="py-2 text-center">Your Bracket</th>
+                            </tr>
+                        </thead>
+                        <tbody id="compareBody"></tbody>
+                    </table>
+                </div>
+                <p class="text-muted small mt-3 mb-0"><i class="bi bi-info-circle me-1"></i> Cutoffs change every year — this is a guide, not a guarantee.</p>
+            </div>
+        </div>
+
+        <!-- How it works -->
+        <details class="card shadow-sm border-0 rounded-4 mb-4">
+            <summary class="card-body py-3 px-4 fw-bold cursor-pointer" style="cursor:pointer;"><i class="bi bi-question-circle me-2 text-success"></i>How is my rank calculated?</summary>
+            <div class="px-4 pb-4 text-secondary small" style="line-height: 1.7;">
+                <p class="mb-2"><b>Step 1 — Board marks (max 300):</b> Each subject's marks are converted to a percentage, then weighted <b>50% Math + 30% Physics + 20% Chemistry</b> (the official 5:3:2 ratio) and scaled to a maximum of 300.</p>
+                <p class="mb-2"><b>Step 2 — Add your KEAM score (max 300).</b></p>
+                <p class="mb-0"><b>Step 3 — Total index (max 600)</b> is matched against 2026 Brilliant Pala rank brackets to estimate your State Merit rank range. Actual ranks also depend on tie-breakers and how all candidates perform, so treat this as a guide.</p>
+            </div>
+        </details>
+
+        <p class="text-center text-muted small mt-4"><i class="bi bi-shield-check me-1"></i> Based on the official CEE 5:3:2 Board Normalization Formula · Reference use only</p>
     </div>
 
     <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
     <script>
+        // ══ Twinkling stars for dark mode ══
+        (function generateStars() {
+            const layer = document.getElementById('starsLayer');
+            if (!layer) return;
+            let html = '';
+            for (let i = 0; i < 70; i++) {
+                const size = Math.random() * 2 + 0.5;
+                const top = Math.random() * 100;
+                const left = Math.random() * 100;
+                const delay = Math.random() * 3;
+                const dur = 2 + Math.random() * 3;
+                html += '<span class="star" style="width:' + size + 'px;height:' + size + 'px;top:' + top + '%;left:' + left + '%;animation-delay:' + delay + 's;animation-duration:' + dur + 's"></span>';
+            }
+            layer.innerHTML = html;
+        })();
+
+        // ══ Analytics telemetry (fire-and-forget) ══
         function sendTelemetry(action, searchData, clicked) {
             try {
                 var payload = JSON.stringify({ action: action || 'Event', search_data: searchData || '', clicked: clicked || '', page: '/predictor' });
@@ -90,57 +281,157 @@
             } catch (e) {}
         }
 
+        // ══ Theme toggle (shared with the rest of the site) ══
+        function applyTheme(theme) {
+            $('html').attr('data-bs-theme', theme);
+            if (theme === 'dark') {
+                $('#themeIcon').removeClass('bi-moon-stars-fill').addClass('bi-sun-fill');
+                $('#themeText').text('Light');
+            } else {
+                $('#themeIcon').removeClass('bi-sun-fill').addClass('bi-moon-stars-fill');
+                $('#themeText').text('Dark');
+            }
+        }
+
+        // ══ 2026 Brilliant Pala bracket matching (unchanged formula) ══
+        function bracketFor(totalIndex) {
+            if (totalIndex >= 585) return { text: 'Top 5', best: 1, worst: 5, cls: 'text-success' };
+            if (totalIndex >= 580) return { text: 'Top 10', best: 1, worst: 10, cls: 'text-success' };
+            if (totalIndex >= 550) return { text: 'Top 100', best: 1, worst: 100, cls: 'text-success' };
+            if (totalIndex >= 540) return { text: '101 - 200', best: 101, worst: 200, cls: 'text-success' };
+            if (totalIndex >= 520) return { text: '201 - 500', best: 201, worst: 500, cls: 'text-primary' };
+            if (totalIndex >= 500) return { text: '500 - 1,000', best: 500, worst: 1000, cls: 'text-primary' };
+            if (totalIndex >= 475) return { text: '1,000 - 2,000', best: 1000, worst: 2000, cls: 'text-primary' };
+            if (totalIndex >= 450) return { text: '2,000 - 3,000', best: 2000, worst: 3000, cls: 'text-info' };
+            if (totalIndex >= 430) return { text: '3,000 - 4,000', best: 3000, worst: 4000, cls: 'text-info' };
+            if (totalIndex >= 400) return { text: '4,000 - 6,000', best: 4000, worst: 6000, cls: 'text-warning' };
+            if (totalIndex >= 350) return { text: '10,000 - 12,000', best: 10000, worst: 12000, cls: 'text-warning' };
+            if (totalIndex >= 300) return { text: '20,000 - 25,000', best: 20000, worst: 25000, cls: 'text-danger' };
+            return { text: '25,000+', best: 25000, worst: 40000, cls: 'text-danger' };
+        }
+
+        function meaningFor(b) {
+            if (b.worst <= 10) return 'Outstanding! This is the level of the very top students in the state.';
+            if (b.worst <= 100) return 'Excellent — you would be among the top 100 candidates.';
+            if (b.worst <= 1000) return 'Great — most top colleges (CS/EC at premier institutes) are within reach.';
+            if (b.worst <= 4000) return 'Good — many good colleges and branches are within reach.';
+            if (b.worst <= 12000) return 'Fair — good options exist at mid-tier colleges and less competitive branches.';
+            return 'Keep improving — but remember cutoffs vary by college and branch.';
+        }
+
+        function compute() {
+            var keam = parseFloat($('#keamScore').val());
+            var m = parseFloat($('#mathMarks').val());
+            var p = parseFloat($('#phyMarks').val());
+            var c = parseFloat($('#chemMarks').val());
+            if (isNaN(keam) || isNaN(m) || isNaN(p) || isNaN(c)) return null;
+            var mPct = (m / maxMarks) * 100;
+            var pPct = (p / maxMarks) * 100;
+            var cPct = (c / maxMarks) * 100;
+            var boardScore = (mPct * 1.5) + (pPct * 0.9) + (cPct * 0.6);
+            var totalIndex = keam + boardScore;
+            return { keam: keam, m: m, p: p, c: c, boardScore: boardScore, totalIndex: totalIndex, bracket: bracketFor(totalIndex) };
+        }
+
+        function renderCompare(bracket) {
+            var course = $('.course-chip.active').data('course');
+            $('#compareBox').show();
+            $('#compareLoading').show();
+            $('#compareTableWrap').hide();
+            $.getJSON('/api/stats/top-colleges', { year: 2026, course: course }, function(data) {
+                $('#compareLoading').hide();
+                if (!data || !data.length) {
+                    $('#compareBody').html('<tr><td colspan="4" class="text-center text-muted py-3">No 2026 cutoff data for this course yet.</td></tr>');
+                    $('#compareTableWrap').show();
+                    return;
+                }
+                var rows = data.slice(0, 10).map(function(d) {
+                    var reachable = d.last >= bracket.best;
+                    var tag = reachable
+                        ? '<span class="reach-yes"><i class="bi bi-check-circle-fill me-1"></i>Within reach</span>'
+                        : '<span class="reach-no"><i class="bi bi-x-circle-fill me-1"></i>Tougher</span>';
+                    return '<tr>' +
+                        '<td class="fw-medium">' + d.college.replace(/^[A-Z]{2,4} - /, '') + '</td>' +
+                        '<td class="text-center">' + d.cutoff.toLocaleString() + '</td>' +
+                        '<td class="text-center">' + d.last.toLocaleString() + '</td>' +
+                        '<td class="text-center">' + tag + '</td>' +
+                        '</tr>';
+                }).join('');
+                $('#compareBody').html(rows);
+                $('#compareTableWrap').show();
+            }).fail(function() {
+                $('#compareLoading').hide();
+                $('#compareBody').html('<tr><td colspan="4" class="text-center text-muted py-3">Could not load cutoffs — please try again.</td></tr>');
+                $('#compareTableWrap').show();
+            });
+        }
+
+        function animateCount(el, target, decimals) {
+            if (!el) return;
+            var dur = 900, start = performance.now();
+            function tick(now) {
+                var p = Math.min((now - start) / dur, 1);
+                var eased = 1 - Math.pow(1 - p, 3);
+                el.textContent = (eased * target).toFixed(decimals || 0);
+                if (p < 1) requestAnimationFrame(tick);
+                else el.textContent = target.toFixed(decimals || 0);
+            }
+            requestAnimationFrame(tick);
+        }
+
+        var maxMarks = 120;
+
         $(document).ready(function() {
-            $('html').attr('data-bs-theme', localStorage.getItem('keam_ui_theme') || 'light');
+            applyTheme(localStorage.getItem('keam_ui_theme') || 'light');
             sendTelemetry('Page Load', '', '');
 
-            var maxMarks = 120;
-            
+            $('#themeToggleBtn').on('click', function() {
+                var target = $('html').attr('data-bs-theme') === 'dark' ? 'light' : 'dark';
+                localStorage.setItem('keam_ui_theme', target);
+                applyTheme(target);
+            });
+
             $('#boardSelect').on('change', function() {
                 maxMarks = $(this).val() === 'dhse' ? 120 : 100;
                 $('.board-input').attr('max', maxMarks).attr('placeholder', 'Max: ' + maxMarks);
+                $('#maxMarkText').text(maxMarks);
             }).trigger('change');
+
+            // Live meter preview
+            function liveUpdate() {
+                var r = compute();
+                if (!r) { $('#liveIndexText').html('0 <small class="text-muted">/ 600</small>'); $('#liveMeter').css('width', '0%'); return; }
+                var idx = Math.max(0, Math.min(600, r.totalIndex));
+                $('#liveIndexText').html(idx.toFixed(1) + ' <small class="text-muted">/ 600</small>');
+                $('#liveMeter').css('width', (idx / 600 * 100) + '%');
+            }
+            $('#keamScore, #mathMarks, #phyMarks, #chemMarks, #boardSelect').on('input change', liveUpdate);
 
             $('#predictorForm').on('submit', function(e) {
                 e.preventDefault();
-                
-                let keam = parseFloat($('#keamScore').val());
-                let m = parseFloat($('#mathMarks').val());
-                let p = parseFloat($('#phyMarks').val());
-                let c = parseFloat($('#chemMarks').val());
+                var r = compute();
+                if (!r) return;
 
-                // Calculate Percentages
-                let mPct = (m / maxMarks) * 100;
-                let pPct = (p / maxMarks) * 100;
-                let cPct = (c / maxMarks) * 100;
+                animateCount(document.getElementById('finalScoreText'), r.totalIndex, 1);
+                $('#boardScoreText').text(r.boardScore.toFixed(2));
+                $('#keamScoreEcho').text(r.keam.toFixed(2));
 
-                // 2026 5:3:2 Ratio Normalization (Max 300)
-                let boardScore = (mPct * 1.5) + (pPct * 0.9) + (cPct * 0.6);
-                let totalIndex = keam + boardScore;
-
-                $('#boardScoreText').text(boardScore.toFixed(2));
-                $('#keamScoreEcho').text(keam.toFixed(2));
-                $('#finalScoreText').text(totalIndex.toFixed(2));
-
-                // 2026 Brilliant Pala Bracket Matching
-                let rank = "25,000+";
-                if(totalIndex >= 585) rank = "Top 5";
-                else if(totalIndex >= 580) rank = "Top 10";
-                else if(totalIndex >= 550) rank = "Top 100";
-                else if(totalIndex >= 540) rank = "101 - 200";
-                else if(totalIndex >= 520) rank = "201 - 500";
-                else if(totalIndex >= 500) rank = "500 - 1,000";
-                else if(totalIndex >= 475) rank = "1,000 - 2,000";
-                else if(totalIndex >= 450) rank = "2,000 - 3,000";
-                else if(totalIndex >= 430) rank = "3,000 - 4,000";
-                else if(totalIndex >= 400) rank = "4,000 - 6,000";
-                else if(totalIndex >= 350) rank = "10,000 - 12,000";
-                else if(totalIndex >= 300) rank = "20,000 - 25,000";
-
-                $('#rankText').text(rank);
-                sendTelemetry('Predict', JSON.stringify({ keam_score: keam, board: $('#boardSelect').val(), math: m, physics: p, chemistry: c }), 'predictor_form');
+                var b = r.bracket;
+                $('#rankText').text(b.text).removeClass('text-success text-primary text-info text-warning text-danger').addClass(b.cls);
+                $('#rankMeaning').text('Meaning: ' + meaningFor(b));
                 $('#resultBox').slideDown();
-                $('html, body').animate({ scrollTop: $("#resultBox").offset().top - 50 }, 500);
+                renderCompare(b);
+                sendTelemetry('Predict', JSON.stringify({ keam_score: r.keam, board: $('#boardSelect').val(), math: r.m, physics: r.p, chemistry: r.c }), 'predictor_form');
+                $('html, body').animate({ scrollTop: $('#resultBox').offset().top - 50 }, 500);
+            });
+
+            $('.course-chip').on('click', function() {
+                $('.course-chip').removeClass('active btn-primary').addClass('btn-outline-primary');
+                $(this).addClass('active btn-primary').removeClass('btn-outline-primary');
+                if ($('#resultBox').is(':visible')) {
+                    var r = compute();
+                    if (r) renderCompare(r.bracket);
+                }
             });
         });
     </script>

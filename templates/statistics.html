@@ -4,12 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>KEAM Statistics Dashboard</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/static/tailwind.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
     <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
-    <script>tailwind.config = { darkMode: 'class', theme: { extend: {} } }</script>
     <style>
         .dark .ts-dropdown, .dark .ts-dropdown .dropdown-content, .dark .ts-control, .dark .ts-control input {
             background-color: #1e293b !important; color: #e2e8f0 !important; border-color: #475569 !important;
@@ -19,10 +18,14 @@
             background-color: #ffffff !important; color: #0f172a !important; opacity: 1 !important;
         }
         .ts-dropdown .active { background-color: #2563eb !important; color: #ffffff !important; }
+        /* Dropdown lists must paint above following cards/sections */
+        .ts-wrapper { position: relative; }
+        .ts-dropdown { z-index: 3000 !important; }
+        .mig-tracker-card { position: relative; z-index: 30; }
         .kpi-card { transition: transform 0.2s; }
         .kpi-card:hover { transform: translateY(-3px); }
         .fade-in { animation: fadeIn 0.4s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 
         /* Workflow / Route Map visualization */
         #migOrbitSvg { width: 100%; background: transparent; }
@@ -97,13 +100,36 @@
         </div>
     </div>
 
-    <!-- Migration Tracker (MOVED TO TOP) -->
+    <!-- Plain-language intro + Quick Takeaways + beginner guide -->
     <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-700 fade-in">
-        <div class="flex flex-wrap items-center justify-between mb-2 gap-2">
-            <h2 class="text-sm font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">&#8644; College Migration Tracker</h2>
-            <span class="text-[11px] font-bold uppercase tracking-wider bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300 px-3 py-1 rounded-full">Phase Jumps</span>
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+            <h2 class="text-sm font-black uppercase tracking-wider text-blue-600 dark:text-blue-400">✨ Quick Takeaways <span id="insightsYear" class="text-slate-400 dark:text-slate-500"></span></h2>
+            <span class="text-[11px] font-bold uppercase tracking-wider bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300 px-3 py-1 rounded-full">For students &amp; parents</span>
         </div>
-        <p class="text-xs text-slate-400 dark:text-slate-500 mb-4">Students who switched colleges/courses between allotment phases.</p>
+        <ul id="insightsList" class="space-y-2 text-sm text-slate-600 dark:text-slate-300">
+            <li class="text-slate-400 dark:text-slate-500">Loading insights…</li>
+        </ul>
+    </div>
+
+    <details class="bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700 rounded-2xl p-4 fade-in">
+        <summary class="cursor-pointer text-sm font-black text-amber-700 dark:text-amber-300">🤔 First time here? How to read this page (click to open)</summary>
+        <div class="mt-3 space-y-2 text-xs text-amber-700 dark:text-amber-300">
+            <p>• <b>Rank</b> = your position in the merit list. A <b>smaller number is better</b> (rank 1 = topper).</p>
+            <p>• <b>Opening rank</b> = the rank of the <b>best student</b> who got a seat in that college + course.</p>
+            <p>• <b>Cutoff rank (closing rank)</b> = the rank of the <b>last student</b> who got a seat. If your rank is better (smaller) than the cutoff, you had a good chance of getting in.</p>
+            <p>• <b>SM (State Merit)</b> = the open / general category. Other letters (EZ, MU, SC…) are reservation quotas — each has its own cutoff.</p>
+            <p>• <b>Rounds (Phase 1, 2, 3)</b> = allotments happen in stages. Students switch seats between rounds, which is why cutoffs move.</p>
+            <p>• Everything here is from <b>past official allotment lists</b> — use it to judge your chances, not as a guarantee.</p>
+        </div>
+    </details>
+
+    <!-- Migration Tracker (MOVED TO TOP) -->
+    <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-700 fade-in mig-tracker-card">
+        <div class="flex flex-wrap items-center justify-between mb-2 gap-2">
+            <h2 class="text-sm font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">🔄 Students Who Switched Colleges (Round Jumps)</h2>
+            <span class="text-[11px] font-bold uppercase tracking-wider bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300 px-3 py-1 rounded-full">Who moved &amp; where</span>
+        </div>
+        <p class="text-xs text-slate-400 dark:text-slate-500 mb-4">Some students change their college/course in a later round. Lots of movement here means <b>waiting for a later round could improve your chances</b>.</p>
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
             <div>
@@ -175,7 +201,7 @@
     <div id="migOrbitWrap" class="hidden fade-in">
         <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
             <div class="flex flex-wrap items-center justify-between px-6 pt-5 pb-3 gap-3">
-                <h3 class="text-base font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">🔀 Migration Route Map</h3>
+                <h3 class="text-base font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">🗺️ Migration Map</h3>
                 <div class="flex flex-wrap items-center gap-5 text-xs font-bold text-slate-500 dark:text-slate-400">
                     <span class="flex items-center gap-1.5"><span class="inline-block w-3.5 h-3.5 rounded bg-red-500/80"></span> Left To (outgoing)</span>
                     <span class="flex items-center gap-1.5"><span class="inline-block w-3.5 h-3.5 rounded bg-emerald-500/80"></span> Received From (incoming)</span>
@@ -185,7 +211,7 @@
             <div class="rounded-b-2xl overflow-hidden bg-slate-50 dark:bg-slate-900">
                 <svg id="migOrbitSvg"></svg>
             </div>
-            <p class="text-[11px] text-slate-400 dark:text-slate-500 py-3 text-center">Hover a card to inspect the students &amp; courses · Left = students who left (course they left → course they joined) · Right = students who arrived · Sorted by count</p>
+            <p class="text-[11px] text-slate-400 dark:text-slate-500 py-3 text-center">Hover a card to see the students · Left = who <b>left</b> this college · Right = who <b>joined</b> it · Sorted by how many moved</p>
         </div>
     </div>
 
@@ -200,15 +226,15 @@
             <p class="text-3xl font-black text-emerald-600 dark:text-emerald-400 mt-1" id="kpiCourses">—</p>
         </div>
         <div class="kpi-card bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-sm border border-slate-200 dark:border-slate-700">
-            <p class="text-[11px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Lowest Cutoff (SM)</p>
+            <p class="text-[11px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Opening Rank (Topper)</p>
             <p class="text-3xl font-black text-green-600 dark:text-green-400 mt-1" id="kpiLowest">—</p>
         </div>
         <div class="kpi-card bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-sm border border-slate-200 dark:border-slate-700">
-            <p class="text-[11px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Last Cutoff (SM)</p>
+            <p class="text-[11px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Cutoff Rank (Last Seat)</p>
             <p class="text-3xl font-black text-amber-600 dark:text-amber-400 mt-1" id="kpiLast">—</p>
         </div>
         <div class="kpi-card bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-sm border border-slate-200 dark:border-slate-700 col-span-2 lg:col-span-1">
-            <p class="text-[11px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Top Branch</p>
+            <p class="text-[11px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Toughest Branch</p>
             <p class="text-sm font-black text-red-600 dark:text-red-400 mt-1 leading-tight" id="kpiTopBranch">—</p>
         </div>
     </div>
@@ -216,19 +242,20 @@
     <!-- College-Specific Cutoff Charts (NEW - user picks college) -->
     <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-700 fade-in">
         <div class="flex flex-wrap items-center justify-between mb-4 gap-3">
-            <h2 class="text-sm font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">College Branch Cutoffs (SM)</h2>
+            <h2 class="text-sm font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">College Cutoff Ranks (State Merit)</h2>
             <div class="flex items-center gap-2">
                 <select id="cutoffCollegeSelect" class="text-xs border border-slate-200 dark:border-slate-600 rounded-lg px-2 py-1.5 bg-slate-50 dark:bg-slate-700 dark:text-white min-w-[220px]"><option value="">Choose College...</option></select>
                 <button id="cutoffLoadBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs px-4 py-1.5 rounded-lg transition-colors">Load</button>
             </div>
         </div>
+        <p class="text-xs text-slate-400 dark:text-slate-500 mb-4">Pick a college and hit <b>Load</b> to see the <b>opening</b> (best) and <b>closing</b> (last admitted) ranks for each course. Lower rank = tougher to get in.</p>
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div>
-                <h3 class="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider mb-2">🟢 Lowest Cutoff Rank (Opening)</h3>
+                <h3 class="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider mb-2">🟢 Opening Rank (best student admitted)</h3>
                 <div class="relative" style="height:320px"><canvas id="chartLowest"></canvas></div>
             </div>
             <div>
-                <h3 class="text-xs font-bold text-red-500 dark:text-red-400 uppercase tracking-wider mb-2">🔴 Last Cutoff Rank (Closing)</h3>
+                <h3 class="text-xs font-bold text-red-500 dark:text-red-400 uppercase tracking-wider mb-2">🔴 Closing Rank (last student admitted)</h3>
                 <div class="relative" style="height:320px"><canvas id="chartLast"></canvas></div>
             </div>
         </div>
@@ -241,7 +268,7 @@
         <!-- Chart: Top 10 Colleges for a course -->
         <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-700">
             <div class="flex flex-wrap items-center justify-between mb-4 gap-2">
-                <h2 class="text-sm font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Top 10 Colleges for Course</h2>
+                <h2 class="text-sm font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Top 10 Colleges for a Course</h2>
                 <select id="collegeChartCourse" class="text-xs border border-slate-200 dark:border-slate-600 rounded-lg px-2 py-1 bg-slate-50 dark:bg-slate-700 dark:text-white">
                     <option value="CS">CS — Computer Science</option>
                     <option value="EC">EC — Electronics</option>
@@ -254,6 +281,7 @@
                     <option value="RB">RB — Robotics</option>
                 </select>
             </div>
+            <p class="text-xs text-slate-400 dark:text-slate-500 mb-4">Which colleges admit the best students for this branch — the lower the rank, the tougher the college.</p>
             <div class="relative" style="height:360px">
                 <canvas id="chartColleges"></canvas>
             </div>
@@ -262,11 +290,12 @@
         <!-- Chart: Seats by Category -->
         <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-700">
             <div class="flex flex-wrap items-center justify-between mb-4 gap-2">
-                <h2 class="text-sm font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Seat Distribution by Category</h2>
+                <h2 class="text-sm font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Seats by Category (Quota)</h2>
                 <select id="bandCollegeSelect" class="text-xs border border-slate-200 dark:border-slate-600 rounded-lg px-2 py-1 bg-slate-50 dark:bg-slate-700 dark:text-white min-w-[180px]">
                     <option value="">All Colleges</option>
                 </select>
             </div>
+            <p class="text-xs text-slate-400 dark:text-slate-500 mb-4">How many seats each quota category gets. <b>SM (State Merit)</b> is the open / general category; the others are reservation groups.</p>
             <div class="relative" style="height:360px">
                 <canvas id="chartBands"></canvas>
             </div>
@@ -276,11 +305,12 @@
     <!-- Chart: Phase Trends with college selector -->
     <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-700 fade-in">
         <div class="flex flex-wrap items-center justify-between mb-4 gap-2">
-            <h2 class="text-sm font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Phase 1 → 2 → 3 Cutoff Shift (SM)</h2>
+            <h2 class="text-sm font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">How Cutoffs Moved Round by Round</h2>
             <select id="phaseCollegeSelect" class="text-xs border border-slate-200 dark:border-slate-600 rounded-lg px-2 py-1 bg-slate-50 dark:bg-slate-700 dark:text-white min-w-[220px]">
                 <option value="">All Colleges (Top Branches)</option>
             </select>
         </div>
+        <p class="text-xs text-slate-400 dark:text-slate-500 mb-4">How the cutoff rank for each course moved from Round 1 → 2 → 3. If ranks fall in later rounds, <b>waiting could help you get a seat</b>.</p>
         <div class="relative" style="height:340px">
             <canvas id="chartPhases"></canvas>
         </div>
@@ -289,19 +319,20 @@
     <!-- Category Spread Table -->
     <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-700 fade-in">
         <div class="flex flex-wrap items-center justify-between mb-4 gap-2">
-            <h2 class="text-sm font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Category-Wise Rank Spread</h2>
+            <h2 class="text-sm font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Rank Ranges by Category (Quota)</h2>
             <select id="catCollegeSelect" class="text-xs border border-slate-200 dark:border-slate-600 rounded-lg px-2 py-1 bg-slate-50 dark:bg-slate-700 dark:text-white min-w-[220px]">
                 <option value="">All Colleges</option>
             </select>
         </div>
+        <p class="text-xs text-slate-400 dark:text-slate-500 mb-4">For each category, the <b>best</b> (topper) rank and the <b>cutoff</b> (last admitted) rank.</p>
         <div class="overflow-x-auto">
             <table class="w-full text-sm text-left border-collapse">
                 <thead>
                     <tr class="border-b border-slate-200 dark:border-slate-700 text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">
                         <th class="py-3 pr-4">Category</th>
-                        <th class="py-3 pr-4 text-right">Lowest Cutoff Rank</th>
+                        <th class="py-3 pr-4 text-right">Best (Topper) Rank</th>
                         <th class="py-3 pr-4 text-right">Avg Closing Rank</th>
-                        <th class="py-3 text-right">Last Cutoff Rank</th>
+                        <th class="py-3 text-right">Cutoff (Last Admitted)</th>
                     </tr>
                 </thead>
                 <tbody id="categoryTable" class="divide-y divide-slate-100 dark:divide-slate-700"></tbody>
@@ -312,19 +343,20 @@
     <!-- Top Branches Table -->
     <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-700 fade-in">
         <div class="flex flex-wrap items-center justify-between mb-4 gap-2">
-            <h2 class="text-sm font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Most Competitive Branches (SM)</h2>
+            <h2 class="text-sm font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Toughest Branches to Get Into</h2>
             <select id="branchCollegeSelect" class="text-xs border border-slate-200 dark:border-slate-600 rounded-lg px-2 py-1 bg-slate-50 dark:bg-slate-700 dark:text-white min-w-[220px]">
                 <option value="">All Colleges</option>
             </select>
         </div>
+        <p class="text-xs text-slate-400 dark:text-slate-500 mb-4">Branches where even the top students needed great ranks. Green = opening rank · red = cutoff (last admitted).</p>
         <div class="overflow-x-auto">
             <table class="w-full text-sm text-left border-collapse">
                 <thead>
                     <tr class="border-b border-slate-200 dark:border-slate-700 text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">
                         <th class="py-3 pr-4">#</th>
                         <th class="py-3 pr-4">Branch</th>
-                        <th class="py-3 pr-4 text-right">Lowest Cutoff</th>
-                        <th class="py-3 text-right">Last Cutoff</th>
+                        <th class="py-3 pr-4 text-right">Opening Rank</th>
+                        <th class="py-3 text-right">Cutoff Rank</th>
                     </tr>
                 </thead>
                 <tbody id="branchTable" class="divide-y divide-slate-100 dark:divide-slate-700"></tbody>
@@ -334,8 +366,8 @@
 
     <!-- ⚔️ Head-to-Head College Comparator -->
     <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-700 fade-in">
-        <h2 class="text-sm font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1">⚔️ Head-to-Head College Comparator</h2>
-        <p class="text-xs text-slate-400 dark:text-slate-500 mb-4">Compare two colleges course-by-course on SM cutoffs — lower last cutoff = admits deeper / more seats filled.</p>
+        <h2 class="text-sm font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1">⚔️ Compare Two Colleges Side by Side</h2>
+        <p class="text-xs text-slate-400 dark:text-slate-500 mb-4">Pick two colleges to compare course-by-course. The one with the lower (better) cutoff rank was <b>tougher to get into</b>.</p>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3 mb-4">
             <div class="lg:col-span-2">
                 <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1">College A</label>
@@ -379,7 +411,7 @@
     <!-- 🔥 College × Course Cutoff Heatmap -->
     <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-700 fade-in">
         <div class="flex flex-wrap items-center justify-between mb-4 gap-2">
-            <h2 class="text-sm font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">🔥 College × Course Cutoff Heatmap (SM)</h2>
+            <h2 class="text-sm font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">🔥 Which Colleges Are Tough per Course</h2>
             <div class="flex items-center gap-2">
                 <label class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">Phase</label>
                 <select id="hmPhase" class="text-xs border border-slate-200 dark:border-slate-600 rounded-lg px-2 py-1.5 bg-slate-50 dark:bg-slate-700 dark:text-white">
@@ -389,7 +421,7 @@
                 </select>
             </div>
         </div>
-        <p class="text-xs text-slate-400 dark:text-slate-500 mb-4">Colour = lowest SM opening rank (teal = most competitive, red = easiest). Hover a cell for details · click a cell to drill into the actual students.</p>
+        <p class="text-xs text-slate-400 dark:text-slate-500 mb-4">Each cell = one college + course. <b>Teal = very tough</b> (topper-level ranks) · <b>red = easier</b>. Click a cell to see the actual students who got in.</p>
         <div id="hmLoading" class="text-center text-slate-400 dark:text-slate-500 py-10 text-sm">Loading heatmap…</div>
         <div id="hmWrap" class="hidden overflow-x-auto max-h-[520px] overflow-y-auto rounded-xl border border-slate-200 dark:border-slate-700">
             <table id="hmTable" class="w-full text-center text-[11px] border-collapse">
@@ -402,7 +434,7 @@
     <!-- 📈 Opening vs Closing Rank (Volatility) -->
     <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-700 fade-in">
         <div class="flex flex-wrap items-center justify-between mb-4 gap-2">
-            <h2 class="text-sm font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">📈 Opening vs Closing Rank (Volatility)</h2>
+            <h2 class="text-sm font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">📈 How Much Do Cutoffs Swing?</h2>
             <div class="flex items-center gap-2">
                 <select id="volCourse" class="text-xs border border-slate-200 dark:border-slate-600 rounded-lg px-2 py-1 bg-slate-50 dark:bg-slate-700 dark:text-white"></select>
                 <select id="volPhase" class="text-xs border border-slate-200 dark:border-slate-600 rounded-lg px-2 py-1.5 bg-slate-50 dark:bg-slate-700 dark:text-white">
@@ -412,7 +444,7 @@
                 </select>
             </div>
         </div>
-        <p class="text-xs text-slate-400 dark:text-slate-500 mb-4">Each dot is a college offering the selected course · x = lowest (opening) SM rank · y = last (closing) rank · size = seats. Colleges far above the diagonal close much deeper than they open — volatile, worth a second look.</p>
+        <p class="text-xs text-slate-400 dark:text-slate-500 mb-4">Each dot = one college for the chosen course. Dots far above the line <b>open easy but close deep</b> — seats kept filling over time, so a lower rank might still get in.</p>
         <div class="relative" style="height:380px"><canvas id="volChart"></canvas></div>
     </div>
 
@@ -440,6 +472,24 @@
             <div id="drillFoot" class="px-5 py-3 border-t border-slate-200 dark:border-slate-700 text-[11px] text-slate-400"></div>
         </div>
     </div>
+
+    <!-- Plain-language terms & category legend -->
+    <details class="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-4 fade-in">
+        <summary class="cursor-pointer text-sm font-black text-slate-500 dark:text-slate-400">📖 Terms &amp; category codes explained (click to open)</summary>
+        <div class="mt-3 grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-slate-600 dark:text-slate-300">
+            <div class="space-y-2">
+                <p class="font-black text-slate-700 dark:text-slate-200 mb-2">Common terms</p>
+                <p>• <b>Rank</b> — your position on the merit list. Smaller = better.</p>
+                <p>• <b>Opening rank</b> — rank of the best student admitted to a college + course.</p>
+                <p>• <b>Cutoff (closing) rank</b> — rank of the last student admitted. Beat this to have gotten in.</p>
+                <p>• <b>SM (State Merit)</b> — the open / general category, no reservation.</p>
+            </div>
+            <div class="space-y-2">
+                <p class="font-black text-slate-700 dark:text-slate-200 mb-2">Some quota categories</p>
+                <p>EZ — Ezhava · MU — Muslim · LA — Latin Catholic · BH — Backward Hindu · SC — Scheduled Caste · ST — Scheduled Tribe · EW — Economically Weaker · OEC — Other Eligible Community · GN — General</p>
+            </div>
+        </div>
+    </details>
 
 </div>
 
@@ -557,7 +607,7 @@
             if (!Array.isArray(data) || !data.length) {
                 if (chartLowest) { chartLowest.destroy(); chartLowest = null; }
                 if (chartLast) { chartLast.destroy(); chartLast = null; }
-                noDataEl.textContent = 'No SM cutoff data for this college/year.';
+                noDataEl.textContent = 'No cutoff data for this college/year — try another college.';
                 noDataEl.classList.remove('hidden');
                 return;
             }
@@ -729,7 +779,7 @@
             };
             const entries = Object.entries(data);
             if (!entries.length) {
-                tbody.innerHTML = '<tr><td colspan="4" class="py-6 text-center text-slate-400 dark:text-slate-500">No data available.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="4" class="py-6 text-center text-slate-400 dark:text-slate-500">No data for this selection — try a different college or year.</td></tr>';
                 return;
             }
             entries.forEach(([cat, v]) => {
@@ -756,7 +806,7 @@
             const tbody = document.getElementById('branchTable');
             tbody.innerHTML = '';
             if (!Array.isArray(data) || !data.length) {
-                tbody.innerHTML = '<tr><td colspan="4" class="py-6 text-center text-slate-400 dark:text-slate-500">No data available.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="4" class="py-6 text-center text-slate-400 dark:text-slate-500">No data for this selection — try a different college or year.</td></tr>';
                 return;
             }
             data.forEach((row, i) => {
@@ -770,6 +820,30 @@
                 `);
             });
         } catch(e) { console.error('Branch table error:', e); }
+    }
+
+    // ── Plain-language Quick Takeaways ───────────────────────────────
+    async function renderInsights() {
+        const list = document.getElementById('insightsList');
+        const yearEl = document.getElementById('insightsYear');
+        if (!list) return;
+        yearEl.textContent = '(' + getYear() + ')';
+        try {
+            const br = await fetch(`/api/stats/top-branches?year=${getYear()}`).then(r => r.json());
+            const items = [];
+            if (Array.isArray(br) && br.length) {
+                const toughest = br[0];
+                items.push(`🏆 <b>Toughest branch:</b> ${esc(toughest.course)} — the topper was rank <b>${toughest.cutoff.toLocaleString()}</b>, and the last seat went to rank <b>${toughest.last.toLocaleString()}</b>.`);
+                const easiest = br[br.length - 1];
+                if (easiest && easiest !== toughest) {
+                    items.push(`🟢 <b>Easiest branch to enter:</b> ${esc(easiest.course)} — seats were still being filled until rank <b>${easiest.last.toLocaleString()}</b>.`);
+                }
+            }
+            items.push('💡 <b>Remember:</b> cutoffs change every year — use this page to judge your chances, not as a promise.');
+            list.innerHTML = items.map(i => `<li>${i}</li>`).join('');
+        } catch(e) {
+            list.innerHTML = '<li class="text-slate-400 dark:text-slate-500">Could not load insights — hit Refresh to try again.</li>';
+        }
     }
 
     // ── Migration Tracker ────────────────────────────────────────────
@@ -1494,6 +1568,7 @@
     // ── Load All ─────────────────────────────────────────────────────
     async function loadAll() {
         await Promise.all([loadKPI(), loadCollegeChart(), loadBandChart(), loadPhaseChart(), loadCategoryTable(), loadBranchTable()]);
+        renderInsights();
     }
 
     document.addEventListener('DOMContentLoaded', async () => {
