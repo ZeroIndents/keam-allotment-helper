@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+<head>
+    <title>KEAM 2026 Rank Predictor | 5:3:2 Normalization</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style>
+        .text-gradient { background: linear-gradient(90deg, #198754, #20c997); -webkit-background-clip: text; -webkit-text-fill-color: transparent; display: inline-block; }
+        [data-bs-theme="dark"] .card { background-color: #1a1a1a; border-color: #2b2b2b; }
+        .score-display { font-size: 3rem; font-weight: 800; letter-spacing: -1px; }
+    </style>
+</head>
+<body class="bg-body-tertiary pb-5">
+
+    <div class="container mt-4" style="max-width: 800px;">
+        <div class="mb-4">
+            <a href="/" class="btn btn-sm btn-outline-secondary rounded-pill mb-3"><i class="bi bi-arrow-left me-1"></i> Back to Allotment Helper</a>
+            <h2 class="fw-bold mb-1"><i class="bi bi-calculator me-2 text-success"></i><span class="text-gradient">KEAM Rank Predictor</span></h2>
+            <p class="text-secondary">Based on the official 2026 CEE 5:3:2 Board Normalization Formula and Brilliant Pala trend analysis.</p>
+        </div>
+
+        <div class="card shadow-sm border-0 rounded-4 mb-4">
+            <div class="card-body p-4 p-md-5">
+                <form id="predictorForm">
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-uppercase text-muted">KEAM Entrance Score</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control form-control-lg bg-success-subtle border-success text-success fw-bold" id="keamScore" placeholder="e.g. 210" min="10" max="300" required>
+                                <span class="input-group-text bg-body">/ 300</span>
+                            </div>
+                            <div class="form-text">Your normalized Entrance Exam mark.</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-uppercase text-muted">Class 12 Board</label>
+                            <select id="boardSelect" class="form-select form-select-lg">
+                                <option value="dhse">Kerala State (DHSE) - Out of 120</option>
+                                <option value="cbse">CBSE / ISC - Out of 100</option>
+                            </select>
+                            <div class="form-text">Sets the maximum marks per subject.</div>
+                        </div>
+                        
+                        <div class="col-12"><hr class="my-2"></div>
+                        <div class="col-12"><h6 class="fw-bold text-primary mb-0"><i class="bi bi-journal-text me-2"></i>Board Marks Obtained</h6></div>
+
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Mathematics <span class="badge bg-danger ms-1">50% Wt.</span></label>
+                            <input type="number" class="form-control board-input" id="mathMarks" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Physics <span class="badge bg-secondary ms-1">30% Wt.</span></label>
+                            <input type="number" class="form-control board-input" id="phyMarks" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Chemistry <span class="badge bg-secondary ms-1">20% Wt.</span></label>
+                            <input type="number" class="form-control board-input" id="chemMarks" required>
+                        </div>
+
+                        <div class="col-12 mt-4">
+                            <button type="submit" class="btn btn-success btn-lg w-100 fw-bold rounded-pill shadow-sm">Calculate Expected Rank</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Result Section -->
+        <div id="resultBox" class="card shadow border-success border-2 rounded-4 text-center p-5" style="display: none;">
+            <h5 class="text-muted fw-bold text-uppercase mb-1">Your Total KEAM Index</h5>
+            <div class="score-display text-dark"><span id="finalScoreText">0</span><span class="fs-4 text-muted"> / 600</span></div>
+            <p class="text-secondary small mb-4">Board Normalization: <strong id="boardScoreText">0</strong> + KEAM Score: <strong id="keamScoreEcho">0</strong></p>
+            
+            <div class="bg-success-subtle p-4 rounded-3">
+                <h6 class="text-success fw-bold text-uppercase mb-2">Estimated State Merit Rank</h6>
+                <h2 class="display-5 fw-bold text-success mb-0" id="rankText">Calculating...</h2>
+            </div>
+            <p class="text-muted small mt-3 mb-0"><i class="bi bi-info-circle me-1"></i> Prediction based on Brilliant Pala 2026 data. Actual ranks will fluctuate based on tie-breakers.</p>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script>
+        function sendTelemetry(action, searchData, clicked) {
+            try {
+                var payload = JSON.stringify({ action: action || 'Event', search_data: searchData || '', clicked: clicked || '', page: '/predictor' });
+                if (navigator.sendBeacon) { navigator.sendBeacon('/api/telemetry', payload); }
+                else { fetch('/api/telemetry', { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: payload, keepalive: true }); }
+            } catch (e) {}
+        }
+
+        $(document).ready(function() {
+            $('html').attr('data-bs-theme', localStorage.getItem('keam_ui_theme') || 'light');
+            sendTelemetry('Page Load', '', '');
+
+            var maxMarks = 120;
+            
+            $('#boardSelect').on('change', function() {
+                maxMarks = $(this).val() === 'dhse' ? 120 : 100;
+                $('.board-input').attr('max', maxMarks).attr('placeholder', 'Max: ' + maxMarks);
+            }).trigger('change');
+
+            $('#predictorForm').on('submit', function(e) {
+                e.preventDefault();
+                
+                let keam = parseFloat($('#keamScore').val());
+                let m = parseFloat($('#mathMarks').val());
+                let p = parseFloat($('#phyMarks').val());
+                let c = parseFloat($('#chemMarks').val());
+
+                // Calculate Percentages
+                let mPct = (m / maxMarks) * 100;
+                let pPct = (p / maxMarks) * 100;
+                let cPct = (c / maxMarks) * 100;
+
+                // 2026 5:3:2 Ratio Normalization (Max 300)
+                let boardScore = (mPct * 1.5) + (pPct * 0.9) + (cPct * 0.6);
+                let totalIndex = keam + boardScore;
+
+                $('#boardScoreText').text(boardScore.toFixed(2));
+                $('#keamScoreEcho').text(keam.toFixed(2));
+                $('#finalScoreText').text(totalIndex.toFixed(2));
+
+                // 2026 Brilliant Pala Bracket Matching
+                let rank = "25,000+";
+                if(totalIndex >= 585) rank = "Top 5";
+                else if(totalIndex >= 580) rank = "Top 10";
+                else if(totalIndex >= 550) rank = "Top 100";
+                else if(totalIndex >= 540) rank = "101 - 200";
+                else if(totalIndex >= 520) rank = "201 - 500";
+                else if(totalIndex >= 500) rank = "500 - 1,000";
+                else if(totalIndex >= 475) rank = "1,000 - 2,000";
+                else if(totalIndex >= 450) rank = "2,000 - 3,000";
+                else if(totalIndex >= 430) rank = "3,000 - 4,000";
+                else if(totalIndex >= 400) rank = "4,000 - 6,000";
+                else if(totalIndex >= 350) rank = "10,000 - 12,000";
+                else if(totalIndex >= 300) rank = "20,000 - 25,000";
+
+                $('#rankText').text(rank);
+                sendTelemetry('Predict', JSON.stringify({ keam_score: keam, board: $('#boardSelect').val(), math: m, physics: p, chemistry: c }), 'predictor_form');
+                $('#resultBox').slideDown();
+                $('html, body').animate({ scrollTop: $("#resultBox").offset().top - 50 }, 500);
+            });
+        });
+    </script>
+</body>
+</html>

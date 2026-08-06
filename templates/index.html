@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+<head>
+    <title>KEAM College Predictor & Allotment Finder | 2024 - 2026 Archives</title>
+    <meta name="description" content="Predict your admission chances based on official KEAM last rank details. Search by college short codes (TVE, FIT, MEC) and explore engineering cutoff trends across multiple allotment phases.">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
+    
+    <style>
+
+        :root { scroll-behavior: smooth; }
+        body {
+            font-size: 14px;
+            color: var(--bs-body-color);
+            position: relative;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ══ Animated Backgrounds (Light Mode) ══ */
+        body {
+            background: linear-gradient(-45deg, #eef2ff, #e0f2fe, #f0fdfa, #faf5ff, #eff6ff);
+            background-size: 400% 400%;
+            animation: gradientShift 18s ease infinite;
+        }
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Floating blobs */
+        .bg-blobs { position: fixed; inset: 0; z-index: -2; overflow: hidden; pointer-events: none; }
+        .blob { position: absolute; border-radius: 50%; filter: blur(70px); opacity: 0.5; animation: floatBlob 20s ease-in-out infinite; }
+        .blob-1 { width: 420px; height: 420px; background: radial-gradient(circle, #93c5fd, transparent 70%); top: -80px; left: -60px; animation-delay: 0s; }
+        .blob-2 { width: 360px; height: 360px; background: radial-gradient(circle, #a7f3d0, transparent 70%); top: 40%; right: -80px; animation-delay: -5s; }
+        .blob-3 { width: 400px; height: 400px; background: radial-gradient(circle, #ddd6fe, transparent 70%); bottom: -100px; left: 30%; animation-delay: -10s; }
+        @keyframes floatBlob {
+            0%,100% { transform: translate(0,0) scale(1); }
+            33% { transform: translate(40px,-30px) scale(1.1); }
+            66% { transform: translate(-30px,40px) scale(0.95); }
+        }
+
+        /* ══ Dark Mode Backgrounds ══ */
+        [data-bs-theme="dark"] body {
+            background: linear-gradient(-45deg, #0a0e1a, #0f172a, #131c31, #1a1030, #0d1424);
+            background-size: 400% 400%;
+            animation: gradientShift 20s ease infinite;
+        }
+        [data-bs-theme="dark"] .blob { opacity: 0.35; filter: blur(80px); }
+        [data-bs-theme="dark"] .blob-1 { background: radial-gradient(circle, #1e40af, transparent 70%); }
+        [data-bs-theme="dark"] .blob-2 { background: radial-gradient(circle, #065f46, transparent 70%); }
+        [data-bs-theme="dark"] .blob-3 { background: radial-gradient(circle, #5b21b6, transparent 70%); }
+        [data-bs-theme="dark"] .blob-4 { background: radial-gradient(circle, #831843, transparent 70%); }
+
+        /* Twinkling stars (dark mode only) */
+        .stars { position: fixed; inset: 0; z-index: -1; pointer-events: none; opacity: 0; transition: opacity 0.6s; }
+        [data-bs-theme="dark"] .stars { opacity: 1; }
+        .star { position: absolute; background: #fff; border-radius: 50%; animation: twinkle 3s ease-in-out infinite; }
+        @keyframes twinkle { 0%,100% { opacity: 0.15; } 50% { opacity: 0.9; } }
+
+        .blur-content { filter: blur(8px); pointer-events: none; user-select: none; }
+
+
+        .terms-modal-backdrop { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); z-index: 1050; display: flex; align-items: center; justify-content: center; padding: 15px; backdrop-filter: blur(4px); }
+
+        .text-gradient {
+            background: linear-gradient(90deg, #0d6efd, #0dcaf0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: inline-block;
+        }
+
+
+
+        /* ══ Glassmorphism Cards ══ */
+        .card {
+            background: rgba(255,255,255,0.72) !important;
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid rgba(255,255,255,0.5) !important;
+            box-shadow: 0 8px 32px rgba(31,38,135,0.08) !important;
+            transition: transform 0.25s ease, box-shadow 0.25s ease;
+        }
+        .card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 40px rgba(31,38,135,0.15) !important;
+        }
+
+        [data-bs-theme="dark"] .card {
+            background: rgba(23,32,50,0.72) !important;
+        [data-bs-theme="dark"] .card:hover { box-shadow: 0 12px 44px rgba(59,130,246,0.15) !important; }
+
+        [data-bs-theme="dark"] .ts-control, [data-bs-theme="dark"] .ts-dropdown { background-color: rgba(23,32,50,0.9) !important; color: var(--bs-body-color) !important; border-color: #2b3a52 !important; }
+        [data-bs-theme="dark"] .ts-dropdown .active { background-color: #0d6efd !important; color: #fff !important; }
+        [data-bs-theme="dark"] .ts-control > input { color: #fff !important; }
+        [data-bs-theme="dark"] .ts-dropdown .option { color: #e2e8f0 !important; }
+        /* Light-mode TomSelect fix: force explicit colors so the option list is always visible */
+        .ts-control, .ts-control input, .ts-dropdown, .ts-dropdown .dropdown-content {
+            background-color: #ffffff !important; color: #0f172a !important; opacity: 1 !important;
+        }
+        .ts-dropdown .option { color: #0f172a !important; }
+        [data-bs-theme="light"] .ts-dropdown .option:hover { background-color: #eef2ff !important; }
+        .ts-dropdown .active, .ts-dropdown .option.active { background-color: #0d6efd !important; color: #ffffff !important; }
+        [data-bs-theme="dark"] .text-gradient { background: linear-gradient(90deg, #6ea8fe, #8c68cd); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        /* Table glass wrapper */
+        .table-glass {
+            background: rgba(255,255,255,0.55) !important;
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+        }
+        #allotmentTable tbody tr:hover { transform: scale(1.004); }
+        #allotmentTable > tbody > tr { animation: rowFade 0.4s ease both; }
+        @keyframes rowFade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+        input[type=number]::-webkit-inner-spin-button,
+        input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+
+        .anim-in { animation: animIn 0.6s cubic-bezier(0.22,1,0.36,1) both; }
+        @keyframes animIn { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
+        .anim-in-1 { animation-delay: 0.05s; }
+        .anim-in-2 { animation-delay: 0.15s; }
+        .anim-in-3 { animation-delay: 0.25s; }
+        .anim-in-4 { animation-delay: 0.35s; }
+
+        /* Button shine + lift */
+        .btn { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+        .btn-lg.rounded-pill:hover { transform: translateY(-2px) scale(1.03); }
+
+        /* Stat cards pulse on hover */
+        .stat-card { transition: transform 0.25s ease, box-shadow 0.25s ease; cursor: default; }
+        .stat-card:hover { transform: translateY(-4px) scale(1.02); }
+        .stat-value { font-variant-numeric: tabular-nums; }
+
+        /* Gradient hero glow */
+        .hero-title { position: relative; }
+
+        /* Theme toggle spin */
+        #themeToggleBtn { transition: transform 0.4s ease; }
+        #themeToggleBtn:hover { transform: rotate(-8deg) scale(1.05); }
+
+        @media (max-width: 767.98px) {
+            .form-control, .form-select, .ts-control, .btn { min-height: 44px; font-size: 16px !important; }
+            .card { padding: 15px !important; margin-bottom: 15px !important; }
+            h2 { font-size: 1.3rem; }
+            .hero-title { font-size: 1.8rem !important; }
+            .blob { filter: blur(50px); }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Animated Background Layers -->
+    <div class="bg-blobs">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+        <div class="blob blob-4"></div>
+    </div>
+    <div class="stars" id="starsLayer"></div>
+
+    <div id="termsModal" class="terms-modal-backdrop">
+        <div class="modal-dialog m-0 w-100" style="max-width: 500px;">
+            <div class="modal-content shadow-lg border-0 rounded-3 bg-body">
+                <div class="modal-header bg-primary text-white p-3 rounded-top">
+                    <h5 class="modal-title font-weight-bold"><i class="bi bi-shield-exclamation me-2"></i>Data Disclaimer</h5>
+                </div>
+                <div class="modal-body p-4">
+                    <p>This platform provides a simplified analysis of public data obtained directly from official CEE PDF documents. Reference use only. Verify all results against official allotment lists before taking action.</p>
+                </div>
+                <div class="modal-footer p-3 rounded-bottom">
+                    <button type="button" id="acceptTermsBtn" class="btn btn-primary w-100 font-weight-bold">Yes, I Accept</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<div id="mainContent" class="container px-3 mt-3 mt-md-4 mb-5 blur-content">
+        <div class="d-flex justify-content-between align-items-start mb-4 pt-2">
+            <div>
+                <div class="d-flex flex-wrap gap-3 mb-3">
+                    <a href="/predictor" class="btn btn-lg btn-success bg-gradient rounded-pill shadow px-4 fw-bold fs-6" onclick="sendTelemetry('Navigate','','predict_rank')"><i class="bi bi-calculator me-2"></i> Predict Rank</a>
+                    <a href="/resizer" class="btn btn-lg btn-info bg-gradient rounded-pill shadow px-4 fw-bold text-white fs-6" onclick="sendTelemetry('Navigate','','resize_files')"><i class="bi bi-crop me-2"></i> Resize Files</a>
+                    <a href="/statistics" class="btn btn-lg btn-primary bg-gradient rounded-pill shadow px-4 fw-bold text-white fs-6" onclick="sendTelemetry('Navigate','','view_statistics')"><i class="bi bi-bar-chart-line-fill me-2"></i> View Statistics</a>
+                </div>
+                <span class="badge bg-primary mb-2">Updated for 2026 Allotments</span>
+                <h2 class="font-weight-bold mb-0 text-gradient"><i class="bi bi-database-gear me-2 text-primary"></i>KEAM Allotment Helper</h2>
+            </div>
+            
+            <button id="themeToggleBtn" class="btn btn-outline-secondary px-3 rounded-pill shadow-sm mt-1">
+                <i id="themeIcon" class="bi bi-moon-stars-fill me-2"></i><span id="themeText">Dark</span>
+            </button>
+        </div>
+        <div class="text-center mb-5 px-md-4">
+            <h1 class="hero-title font-weight-bold mb-3" style="font-size: 2.4rem;">
+                The Ultimate <span class="text-gradient">KEAM College Predictor</span>
+            </h1>
+            <p class="text-secondary mx-auto" style="max-width: 800px; font-size: 1.1rem; line-height: 1.6;">
+                Navigating CEE Kerala's option registration doesn't have to be a guessing game. Search using your <strong>Register Number</strong> to instantly find your Allotment, or track engineering cutoffs across all phases.
+            </p>
+        </div>
+
+        <div class="row g-2 g-md-3 mb-4">
+            <div class="col-4">
+                <div class="card p-2 p-md-3 h-100 text-center text-md-start shadow-sm border-0 bg-primary-subtle text-primary-emphasis rounded-3">
+                    <h6 class="mb-0 text-muted small text-uppercase fw-bold" style="font-size: 11px;">Rows Indexed</h6>
+                    <h5 class="mb-0 font-weight-bold" id="statRows">...</h5>
+                </div>
+            </div>
+            <div class="col-4">
+                <div class="card p-2 p-md-3 h-100 text-center text-md-start shadow-sm border-0 bg-success-subtle text-success-emphasis rounded-3">
+                    <h6 class="mb-0 text-muted small text-uppercase fw-bold" style="font-size: 11px;">Campuses</h6>
+                    <h5 class="mb-0 font-weight-bold" id="statColleges">...</h5>
+                </div>
+            </div>
+            <div class="col-4">
+                <div class="card p-2 p-md-3 h-100 text-center text-md-start shadow-sm border-0 bg-info-subtle text-info-emphasis rounded-3">
+                    <h6 class="mb-0 text-muted small text-uppercase fw-bold" style="font-size: 11px;">Active Years</h6>
+                    <h5 class="mb-0 font-weight-bold" id="statYears">...</h5>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card shadow-sm p-3 p-md-4 mb-4 rounded-3 border-0">
+            <div class="row g-2 g-md-3">
+                <div class="col-6 col-md-1">
+                    <label class="form-label small font-weight-bold mb-1 text-secondary">Year</label>
+                    <select id="yearFilter" class="form-select border-secondary-subtle"><option value="">All</option></select>
+                </div>
+                <div class="col-6 col-md-2">
+                    <label class="form-label small font-weight-bold mb-1 text-secondary">Round</label>
+                    <select id="phaseFilter" class="form-select border-secondary-subtle">
+                        <option value="">All Phases</option>
+                        <option value="Phase1">Phase 1</option>
+                        <option value="Phase2">Phase 2</option>
+                        <option value="Phase3">Phase 3</option>
+                    </select>
+                </div>
+                
+                <div class="col-6 col-md-1">
+                    <label class="form-label small fw-bold mb-1 text-primary"><i class="bi bi-person-vcard me-1"></i>Reg No</label>
+                    <input type="number" id="regFilter" class="form-control border-primary" placeholder="e.g. 123456">
+                </div>
+                <div class="col-6 col-md-1">
+                    <label class="form-label small fw-bold mb-1 text-primary"><i class="bi bi-hash me-1"></i>Rank</label>
+                    <input type="number" id="rankFilter" class="form-control border-primary" placeholder="e.g. 10452">
+                </div>
+                
+                <div class="col-12 col-md-3">
+                    <label class="form-label small font-weight-bold mb-1 text-secondary">College</label>
+                    <select id="collegeFilter"><option value="">All Colleges</option></select>
+                </div>
+                <div class="col-12 col-md-2">
+                    <label class="form-label small font-weight-bold mb-1 text-secondary">Course</label>
+                    <select id="courseFilter"><option value="">All Courses</option></select>
+                </div>
+                <!-- Updated Category Filter -->
+                <div class="col-6 col-md-1">
+                    <label class="form-label small font-weight-bold mb-1 text-secondary">Category</label>
+                    <select id="categoryFilter" class="form-select border-secondary-subtle">
+                        <option value="">All</option>
+                    </select>
+                </div>
+                <div class="col-6 col-md-1">
+                    <label class="form-label small font-weight-bold mb-1 text-secondary">Seat</label>
+                    <input type="text" id="seatFilter" class="form-control border-secondary-subtle" placeholder="SM">
+                </div>
+            </div>
+        </div>
+
+        <div id="rankSummaryContainer" class="mb-4" style="display: none;">
+            <h5 class="text-primary mb-3 fw-bold"><i class="bi bi-bar-chart-fill me-2"></i>Category Rank Ranges</h5>
+            <div id="rankCards" class="row g-2"></div>
+        </div>
+
+        <div class="card shadow-sm p-2 p-md-4 rounded-3 border-0">
+            <table id="allotmentTable" class="table table-striped table-hover align-middle w-100">
+                <thead class="text-body-emphasis" style="background: rgba(148,163,184,0.12);">
+                    <tr>
+                        <th class="d-md-none">Allotment Details</th>
+                        <th class="d-none d-md-table-cell text-center">Year</th>
+                        <th class="d-none d-md-table-cell text-center">Phase</th>
+                        <th class="d-none d-md-table-cell">Reg No</th>
+                        <th class="d-none d-md-table-cell">Rank</th>
+                        <th class="d-none d-md-table-cell">College Name</th>
+                        <th class="d-none d-md-table-cell">Course Name</th>
+                        <th class="d-none d-md-table-cell">Category</th>
+                        <th class="d-none d-md-table-cell">Seat Type</th>
+                    </tr>
+                </thead>
+            </table>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+    
+    <script>
+        // ══ Generate twinkling stars for dark mode ══
+        (function generateStars() {
+            const layer = document.getElementById('starsLayer');
+            if (!layer) return;
+            let html = '';
+            for (let i = 0; i < 90; i++) {
+                const size = Math.random() * 2 + 0.5;
+                const top = Math.random() * 100;
+                const left = Math.random() * 100;
+                const delay = Math.random() * 3;
+                const dur = 2 + Math.random() * 3;
+                html += `<span class="star" style="width:${size}px;height:${size}px;top:${top}%;left:${left}%;animation-delay:${delay}s;animation-duration:${dur}s"></span>`;
+            }
+            layer.innerHTML = html;
+        })();
+
+        // ══ Animated number counter ══
+        function animateCount(el, target) {
+            if (!el || isNaN(target)) return;
+            const dur = 1200, start = performance.now();
+            function tick(now) {
+                const p = Math.min((now - start) / dur, 1);
+                const eased = 1 - Math.pow(1 - p, 3);
+                el.textContent = Math.floor(eased * target).toLocaleString();
+                if (p < 1) requestAnimationFrame(tick);
+                else el.textContent = target.toLocaleString();
+            }
+            requestAnimationFrame(tick);
+        }
+
+        // ══ Analytics telemetry (fire-and-forget) ══
+        function sendTelemetry(action, searchData, clicked) {
+            try {
+                var payload = JSON.stringify({ action: action || 'Event', search_data: searchData || '', clicked: clicked || '', page: '/index' });
+                if (navigator.sendBeacon) { navigator.sendBeacon('/api/telemetry', payload); }
+                else { fetch('/api/telemetry', { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: payload, keepalive: true }); }
+            } catch (e) {}
+        }
+
+        $(document).ready(function () {
+            var collegeSelect, courseSelect;
+
+            function applyTheme(theme) {
+                $('html').attr('data-bs-theme', theme);
+                if (theme === 'dark') {
+                    $('#themeIcon').removeClass('bi-moon-stars-fill').addClass('bi-sun-fill');
+                    $('#themeText').text('Light');
+                } else {
+                    $('#themeIcon').removeClass('bi-sun-fill').addClass('bi-moon-stars-fill');
+                    $('#themeText').text('Dark');
+                }
+            }
+            applyTheme(localStorage.getItem('keam_ui_theme') || 'light');
+
+            $('#themeToggleBtn').on('click', function() {
+                var target = $('html').attr('data-bs-theme') === 'dark' ? 'light' : 'dark';
+                localStorage.setItem('keam_ui_theme', target);
+                applyTheme(target);
+            });
+
+            if (localStorage.getItem('keam_terms_accepted') === 'true') {
+                $('#termsModal').hide();
+                $('#mainContent').removeClass('blur-content');
+            }
+            $('#acceptTermsBtn').on('click', function() {
+                localStorage.setItem('keam_terms_accepted', 'true');
+                $('#termsModal').fadeOut(250, function() { $('#mainContent').removeClass('blur-content'); });
+            });
+
+            // Fetch Stats (with animated counters)
+            $.getJSON('/api/stats', function(d) {
+                animateCount(document.getElementById('statRows'), d.total_rows);
+                animateCount(document.getElementById('statColleges'), d.unique_colleges);
+                animateCount(document.getElementById('statYears'), d.total_years);
+            });
+
+            // Fetch Years Dropdown (default to 2026, fall back to the most recent year)
+            $.getJSON('/api/years', function(y) {
+                $.each(y, function(i, val) { $('#yearFilter').append($('<option></option>').attr('value', val).text(val)); });
+                var preferred = y.includes(2026) ? '2026' : (y.length ? String(y[0]) : '');
+                $('#yearFilter').val(preferred);
+                if (typeof table !== 'undefined') table.draw();
+            });
+
+            // Fetch Categories Dropdown dynamically
+            $.getJSON('/api/categories', function(cats) {
+                $.each(cats, function(i, val) { $('#categoryFilter').append($('<option></option>').attr('value', val).text(val)); });
+            });
+
+            collegeSelect = new TomSelect('#collegeFilter', { 
+                create: false, 
+                sortField: {field: 'text', direction: 'asc'},
+                placeholder: "Search college name..."
+            });
+            
+            courseSelect = new TomSelect('#courseFilter', { 
+                create: false, 
+                sortField: {field: 'text', direction: 'asc'},
+                placeholder: "Search course name..."
+            });
+
+            // Track what the visitor searched for (filters + register/rank lookups)
+            function trackSearch(clicked) {
+                try {
+                    var d = {
+                        year: $('#yearFilter').val() || '',
+                        phase: $('#phaseFilter').val() || '',
+                        college: collegeSelect ? collegeSelect.getValue() : '',
+                        course: courseSelect ? courseSelect.getValue() : '',
+                        category: $('#categoryFilter').val() || '',
+                        seat: $('#seatFilter').val() || '',
+                        rank: $('#rankFilter').val() || '',
+                        reg_no: $('#regFilter').val() || ''
+                    };
+                    sendTelemetry('Search', JSON.stringify(d), clicked || '');
+                } catch (e) {}
+            }
+
+            function updateDropdown(url, params, selectInstance, defaultText) {
+                $.getJSON(url, params, function(data) {
+                    var currentValue = selectInstance.getValue();
+                    selectInstance.clearOptions();
+                    selectInstance.addOption({value: "", text: defaultText});
+                    
+                    $.each(data, function(i, val) { 
+                        selectInstance.addOption({value: val, text: val}); 
+                    });
+                    
+                    selectInstance.refreshOptions(false); 
+                    
+                    if (data.includes(currentValue)) {
+                        selectInstance.setValue(currentValue, true);
+                    } else {
+                        selectInstance.setValue("", true);
+                    }
+                });
+            }
+
+            updateDropdown('/api/colleges', {}, collegeSelect, "All Colleges");
+            updateDropdown('/api/courses', {}, courseSelect, "All Courses");
+
+            function checkAndLoadInfographic() {
+                let selectedCollege = collegeSelect.getValue();
+                let selectedCourse = courseSelect.getValue();
+                let selectedYear = $('#yearFilter').val();
+
+                if (selectedCollege && selectedCourse) {
+                    $.ajax({
+                        url: '/api/rank-summary',
+                        data: { college: selectedCollege, course: selectedCourse, year: selectedYear },
+                        success: function(data) {
+                            if (data.length > 0) {
+                                $('#rankSummaryContainer').fadeIn();
+                                $('#rankCards').empty();
+                                
+                                data.forEach(function(item) {
+                                    let cardHtml = `
+                                        <div class="col-md-3 col-sm-4 col-6">
+                                            <div class="card border-primary shadow-sm h-100">
+                                                <div class="card-body p-2 text-center">
+                                                    <h6 class="card-title text-primary fw-bold mb-1">${item.category}</h6>
+                                                    <p class="card-text small mb-0 fw-medium">
+                                                        ${item.start.toLocaleString()} <i class="bi bi-arrow-right text-muted mx-1"></i> ${item.end.toLocaleString()}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    `;
+                                    $('#rankCards').append(cardHtml);
+                                });
+                            } else {
+                                $('#rankSummaryContainer').hide();
+                            }
+                        }
+                    });
+                } else {
+                    $('#rankSummaryContainer').hide();
+                }
+            }
+
+            collegeSelect.on('change', function(val) {
+                if(typeof table !== 'undefined') table.draw(); 
+                updateDropdown('/api/courses', { college: val }, courseSelect, "All Courses");
+                checkAndLoadInfographic();
+                trackSearch('college_select');
+            });
+
+            courseSelect.on('change', function(val) {
+                if(typeof table !== 'undefined') table.draw(); 
+                updateDropdown('/api/colleges', { course: val }, collegeSelect, "All Colleges");
+                checkAndLoadInfographic();
+                trackSearch('course_select');
+            });
+
+            var table = $('#allotmentTable').DataTable({
+                "processing": true, 
+                "serverSide": true, 
+                "responsive": false, 
+                "scrollX": false,    
+                "ajax": {
+                    "url": "/data", "type": "GET",
+                    "data": function (d) {
+                        d.year = $('#yearFilter').val(); 
+                        d.phase = $('#phaseFilter').val();
+                        d.college = collegeSelect.getValue(); 
+                        d.course = courseSelect.getValue(); 
+                        d.category = $('#categoryFilter').val();
+                        d.seat = $('#seatFilter').val();
+                        d.rank = $('#rankFilter').val(); 
+                        d.reg_no = $('#regFilter').val(); 
+                    }
+                },
+                "columns": [
+                    { 
+                        "data": null, 
+                        "className": "d-md-none border-bottom",
+                        "orderable": false,
+                        "render": function(data, type, row) { 
+                            let yearBadgeClass = "bg-secondary";
+                            if (row.year == 2026) yearBadgeClass = "bg-success";
+                            else if (row.year == 2025) yearBadgeClass = "bg-primary";
+                            else if (row.year == 2024) yearBadgeClass = "bg-warning text-dark";
+
+                            let phaseBadge = `<span class="badge bg-secondary">${row.phase}</span>`;
+                            if (row.phase === 'Phase1') phaseBadge = '<span class="badge bg-danger">Phase 1</span>';
+                            if (row.phase === 'Phase2') phaseBadge = '<span class="badge bg-primary">Phase 2</span>';
+                            if (row.phase === 'Phase3') phaseBadge = '<span class="badge bg-success">Phase 3</span>';
+
+                            let displayRank = row.rank !== 'N/A' && row.rank !== 0 ? `<span class="text-primary">${row.rank}</span>` : `<span class="text-muted">N/A</span>`;
+                            let displayReg = row.register_number !== 'N/A' && row.register_number ? `<span class="text-info">${row.register_number}</span>` : `<span class="text-muted">N/A</span>`;
+
+                            return `
+                                <div class="d-flex flex-column py-2 pe-2">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <span class="fw-bold text-dark fs-6">Reg: ${displayReg} | Rank: ${displayRank}</span>
+                                        <div class="text-end">
+                                            <span class="badge ${yearBadgeClass}">${row.year}</span>
+                                            ${phaseBadge}
+                                        </div>
+                                    </div>
+                                    <span class="fw-bold text-dark text-wrap fs-6">${row.college_name}</span>
+                                    <span class="text-muted small text-wrap mt-1 mb-2">${row.course_name}</span>
+                                    <div>
+                                        <span class="badge bg-light text-dark border border-secondary-subtle shadow-sm me-1">${row.candidate_category}</span>
+                                        <span class="badge bg-light text-dark border border-secondary-subtle shadow-sm">${row.seat_type}</span>
+                                    </div>
+                                </div>
+                            `; 
+                        } 
+                    },
+                    { 
+                        "data": "year",
+                        "className": "d-none d-md-table-cell align-middle text-center border-bottom",
+                        "render": function(data) {
+                            let badgeClass = "bg-secondary";
+                            if (data == 2026) badgeClass = "bg-success";
+                            else if (data == 2025) badgeClass = "bg-primary";
+                            else if (data == 2024) badgeClass = "bg-warning text-dark";
+                            else if (data == 2023) badgeClass = "bg-info text-dark";
+                            else if (data == 2022) badgeClass = "bg-danger";
+                            return `<span class="badge ${badgeClass} fs-6">${data}</span>`;
+                        }
+                    },
+                    { 
+                        "data": "phase", 
+                        "className": "d-none d-md-table-cell align-middle text-center border-bottom",
+                        "render": function(d) { 
+                            if (d === 'Phase1') return '<span class="badge bg-danger">Phase 1</span>';
+                            if (d === 'Phase2') return '<span class="badge bg-primary">Phase 2</span>';
+                            if (d === 'Phase3') return '<span class="badge bg-success">Phase 3</span>';
+                            return `<span class="badge bg-secondary">${d}</span>`; 
+                        } 
+                    },
+                    { 
+                        "data": "register_number", 
+                        "className": "d-none d-md-table-cell border-bottom align-middle text-info fw-bold",
+                        "render": function(d) { return d && d !== 'N/A' ? d : '<span class="text-muted fw-normal">N/A</span>'; }
+                    },
+                    { 
+                        "data": "rank", 
+                        "className": "d-none d-md-table-cell border-bottom align-middle fw-bold text-primary fs-6",
+                        "render": function(d) { return d && d !== 'N/A' && d !== 0 ? d : '<span class="text-muted fw-normal fs-6">N/A</span>'; }
+                    },
+                    { "data": "college_name", "className": "d-none d-md-table-cell border-bottom align-middle fw-medium" }, 
+                    { "data": "course_name", "className": "d-none d-md-table-cell border-bottom align-middle" }, 
+                    { "data": "candidate_category", "className": "d-none d-md-table-cell border-bottom align-middle" }, 
+                    { "data": "seat_type", "className": "d-none d-md-table-cell border-bottom align-middle" }
+                ],
+                "pageLength": 25, 
+                "dom": 'lrtip', 
+                "order": [[4, "asc"]] 
+            });
+
+            // Apply the default year (2026) even if the /api/years fetch
+            // resolved before DataTable finished initializing.
+            if ($('#yearFilter').val()) table.draw();
+
+            // Added #categoryFilter to trigger DataTable refresh immediately on change
+            $('#yearFilter, #phaseFilter, #categoryFilter').on('change', function () { 
+                table.draw(); 
+                checkAndLoadInfographic();
+                trackSearch('filters');
+            });
+
+            var delay = (function() { var t = 0; return function(c, m) { clearTimeout(t); t = setTimeout(c, m); }; })();
+            
+            // Removed #categoryFilter from keyup since it is a dropdown now
+            $('#seatFilter, #rankFilter, #regFilter').on('keyup change input', function () { 
+                delay(function() { table.draw(); trackSearch('quick_filters'); }, 350); 
+            });
+
+            sendTelemetry('Page Load', '', '');
+        });
+    </script>
+<script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "79184b8e698f465dafc6228ec53385ed"}'></script>
+</body>
+</html>

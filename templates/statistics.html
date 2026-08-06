@@ -1,0 +1,1527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KEAM Statistics Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+    <script>tailwind.config = { darkMode: 'class', theme: { extend: {} } }</script>
+    <style>
+        .dark .ts-dropdown, .dark .ts-dropdown .dropdown-content, .dark .ts-control, .dark .ts-control input {
+            background-color: #1e293b !important; color: #e2e8f0 !important; border-color: #475569 !important;
+        }
+        .dark .ts-dropdown .active { background-color: #2563eb !important; color: #ffffff !important; }
+        .ts-dropdown, .ts-dropdown .dropdown-content, .ts-control, .ts-control input {
+            background-color: #ffffff !important; color: #0f172a !important; opacity: 1 !important;
+        }
+        .ts-dropdown .active { background-color: #2563eb !important; color: #ffffff !important; }
+        .kpi-card { transition: transform 0.2s; }
+        .kpi-card:hover { transform: translateY(-3px); }
+        .fade-in { animation: fadeIn 0.4s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Workflow / Route Map visualization */
+        #migOrbitSvg { width: 100%; background: transparent; }
+        .wf-link { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+        .wf-node-rect { rx: 12; ry: 12; cursor: pointer; transition: filter 0.2s; }
+        .wf-node-rect:hover { filter: brightness(1.12) drop-shadow(0 4px 12px rgba(0,0,0,0.25)); }
+        .wf-node-label { pointer-events: none; font-weight: 700; }
+        .wf-node-count { pointer-events: none; font-weight: 900; }
+        .wf-center-rect { rx: 16; ry: 16; }
+        .wf-grid-dot { fill: currentColor; opacity: 0.07; }
+        [data-bs-theme="dark"] .wf-grid-dot, .dark .wf-grid-dot { opacity: 0.05; }
+
+        /* Rich student-detail tooltip for the route map */
+        .wf-tooltip {
+            position: fixed; z-index: 9999; pointer-events: auto;
+            padding: 12px 14px; border-radius: 12px;
+            background: rgba(255,255,255,0.97); color: #0f172a;
+            border: 1px solid rgba(148,163,184,0.3);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+            font-size: 12px; font-weight: 600;
+            max-width: 400px; max-height: 60vh;
+            overflow-y: auto; overflow-x: hidden;
+            opacity: 0; transition: opacity 0.15s;
+        }
+        .dark .wf-tooltip { background: rgba(15,23,42,0.97); color: #e2e8f0; border-color: rgba(99,102,241,0.3); }
+        .wf-tip-sub { font-size: 11px; opacity: 0.85; margin-top: 2px; }
+        .wf-tip-caption { font-size: 10px; font-weight: 800; letter-spacing: 0.6px; text-transform: uppercase; opacity: 0.55; margin: 8px 0 4px; }
+        .wf-tip-list { max-height: 280px; overflow-y: auto; border-top: 1px solid rgba(148,163,184,0.25); padding-top: 4px; }
+        .dark .wf-tip-list { border-top-color: rgba(100,116,139,0.35); }
+        .wf-tip-row { display: grid; grid-template-columns: 76px 56px 38px 1fr; gap: 8px; padding: 4px 2px; border-bottom: 1px dashed rgba(148,163,184,0.25); font-size: 11px; align-items: baseline; }
+        .dark .wf-tip-row { border-bottom-color: rgba(100,116,139,0.2); }
+        .wf-tip-row:last-child { border-bottom: none; }
+        .wf-tip-sumrow { display: grid; grid-template-columns: 56px 1fr; gap: 8px; padding: 4px 2px; border-bottom: 1px dashed rgba(148,163,184,0.25); font-size: 11px; align-items: baseline; }
+        .dark .wf-tip-sumrow { border-bottom-color: rgba(100,116,139,0.2); }
+        .wf-tip-sumrow:last-child { border-bottom: none; }
+        .wf-tip-appl { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-weight: 800; color: #2563eb; }
+        .dark .wf-tip-appl { color: #93c5fd; }
+        .wf-tip-rank { font-weight: 900; }
+        .wf-tip-cat { opacity: 0.7; }
+        .wf-tip-course { opacity: 0.9; }
+        .wf-tip-more { padding: 5px 2px 0; font-size: 11px; opacity: 0.7; font-style: italic; }
+
+        /* Cross-college / cross-course comparison widgets */
+        #hmTable td[data-college] { transition: filter 0.15s, transform 0.15s; }
+        #hmTable td[data-college]:hover { filter: brightness(1.15); outline: 2px solid rgba(99,102,241,0.6); outline-offset: -2px; }
+        #drillModal { animation: fadeIn 0.2s ease-out; }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 min-h-screen transition-colors duration-300">
+<div class="max-w-7xl mx-auto p-4 md:p-6 space-y-6">
+
+    <!-- Header -->
+    <div class="flex flex-wrap items-center justify-between gap-3">
+        <div>
+            <a href="/" class="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline tracking-wide uppercase">&larr; Back to Allotment Helper</a>
+            <h1 class="text-2xl font-black text-slate-800 dark:text-white mt-1">📊 KEAM Statistics Dashboard</h1>
+            <p class="text-sm text-slate-500 dark:text-slate-400">Cutoff trends, category spreads & migration insights</p>
+        </div>
+        <div class="flex items-center gap-3">
+            <button id="darkToggle" class="p-2 rounded-full bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors" title="Toggle Dark Mode">
+                <span id="darkIcon">🌙</span>
+            </button>
+            <label class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">Year</label>
+            <select id="globalYear" class="bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm font-bold focus:ring-2 focus:ring-blue-500 dark:text-white">
+                <option value="2026" selected>2026</option>
+                <option value="2025">2025</option>
+                <option value="2024">2024</option>
+            </select>
+            <button id="refreshBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm px-5 py-2 rounded-full shadow-sm transition-colors">
+                &#8635; Refresh
+            </button>
+        </div>
+    </div>
+
+    <!-- Migration Tracker (MOVED TO TOP) -->
+    <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-700 fade-in">
+        <div class="flex flex-wrap items-center justify-between mb-2 gap-2">
+            <h2 class="text-sm font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">&#8644; College Migration Tracker</h2>
+            <span class="text-[11px] font-bold uppercase tracking-wider bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300 px-3 py-1 rounded-full">Phase Jumps</span>
+        </div>
+        <p class="text-xs text-slate-400 dark:text-slate-500 mb-4">Students who switched colleges/courses between allotment phases.</p>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+            <div>
+                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1">From Phase</label>
+                <select id="migFromPhase" class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg p-2 text-sm dark:text-white">
+                    <option value="Phase1" selected>Phase 1</option>
+                    <option value="Phase2">Phase 2</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1">To Phase</label>
+                <select id="migToPhase" class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg p-2 text-sm dark:text-white">
+                    <option value="Phase2" selected>Phase 2</option>
+                    <option value="Phase3">Phase 3</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1">College (Optional)</label>
+                <select id="migCollege" placeholder="All Colleges..."><option value="">All Colleges</option></select>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1">Course (Optional)</label>
+                <select id="migCourse" placeholder="All Courses..."><option value="">All Courses</option></select>
+            </div>
+        </div>
+
+        <button id="migSearchBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm px-6 py-2.5 rounded-full shadow-sm transition-colors">
+            🔍 Find Migrations
+        </button>
+
+        <div id="migResults" class="hidden mt-5 space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700 rounded-xl p-4 text-center">
+                    <span class="block text-[11px] font-bold uppercase tracking-wider text-amber-500 dark:text-amber-400 mb-1">Total Jumped</span>
+                    <span class="block text-3xl font-black text-amber-700 dark:text-amber-300" id="migTotalCount">0</span>
+                </div>
+                <div class="bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-700 rounded-xl p-4">
+                    <span class="block text-[11px] font-bold uppercase tracking-wider text-emerald-500 dark:text-emerald-400 mb-2">&#10132; Top Destinations</span>
+                    <ul id="migTopDest" class="text-xs font-medium text-emerald-800 dark:text-emerald-300 space-y-1"></ul>
+                </div>
+                <div class="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 rounded-xl p-4">
+                    <span class="block text-[11px] font-bold uppercase tracking-wider text-red-500 dark:text-red-400 mb-2">&#10134; Top Sources (Left From)</span>
+                    <ul id="migTopSrc" class="text-xs font-medium text-red-800 dark:text-red-300 space-y-1"></ul>
+                </div>
+            </div>
+            <div class="overflow-x-auto max-h-[600px] overflow-y-auto rounded-xl border border-slate-200 dark:border-slate-700">
+                <table class="w-full text-left text-xs border-collapse">
+                    <thead class="sticky top-0 bg-slate-100 dark:bg-slate-700">
+                        <tr class="text-[11px] font-bold text-slate-400 dark:text-slate-300 uppercase tracking-wider">
+                            <th class="py-2.5 px-3">Applicant</th>
+                            <th class="py-2.5 px-3">Rank</th>
+                            <th class="py-2.5 px-3 text-red-500 dark:text-red-400">From College</th>
+                            <th class="py-2.5 px-3 text-red-400 dark:text-red-300">From Course</th>
+                            <th class="py-2.5 px-3 text-emerald-600 dark:text-emerald-400">To College</th>
+                            <th class="py-2.5 px-3 text-emerald-500 dark:text-emerald-300">To Course</th>
+                            <th class="py-2.5 px-3">Cat</th>
+                        </tr>
+                    </thead>
+                    <tbody id="migTableBody" class="divide-y divide-slate-100 dark:divide-slate-700 font-medium"></tbody>
+                </table>
+            </div>
+        </div>
+        <div id="migNoData" class="hidden text-center text-slate-400 dark:text-slate-500 py-8 text-sm">
+            😐 No migration data found for this selection.
+        </div>
+    </div>
+
+    <!-- Workflow Route Map (n8n style) -->
+    <div id="migOrbitWrap" class="hidden fade-in">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+            <div class="flex flex-wrap items-center justify-between px-6 pt-5 pb-3 gap-3">
+                <h3 class="text-base font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">🔀 Migration Route Map</h3>
+                <div class="flex flex-wrap items-center gap-5 text-xs font-bold text-slate-500 dark:text-slate-400">
+                    <span class="flex items-center gap-1.5"><span class="inline-block w-3.5 h-3.5 rounded bg-red-500/80"></span> Left To (outgoing)</span>
+                    <span class="flex items-center gap-1.5"><span class="inline-block w-3.5 h-3.5 rounded bg-emerald-500/80"></span> Received From (incoming)</span>
+                    <span class="flex items-center gap-1.5"><span class="inline-block w-5 h-3.5 rounded bg-blue-500"></span> Selected College</span>
+                </div>
+            </div>
+            <div class="rounded-b-2xl overflow-hidden bg-slate-50 dark:bg-slate-900">
+                <svg id="migOrbitSvg"></svg>
+            </div>
+            <p class="text-[11px] text-slate-400 dark:text-slate-500 py-3 text-center">Hover a card to inspect the students &amp; courses · Left = students who left (course they left → course they joined) · Right = students who arrived · Sorted by count</p>
+        </div>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="grid grid-cols-2 lg:grid-cols-5 gap-4 fade-in" id="kpiRow">
+        <div class="kpi-card bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-sm border border-slate-200 dark:border-slate-700">
+            <p class="text-[11px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Colleges</p>
+            <p class="text-3xl font-black text-blue-600 dark:text-blue-400 mt-1" id="kpiColleges">—</p>
+        </div>
+        <div class="kpi-card bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-sm border border-slate-200 dark:border-slate-700">
+            <p class="text-[11px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Branches</p>
+            <p class="text-3xl font-black text-emerald-600 dark:text-emerald-400 mt-1" id="kpiCourses">—</p>
+        </div>
+        <div class="kpi-card bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-sm border border-slate-200 dark:border-slate-700">
+            <p class="text-[11px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Lowest Cutoff (SM)</p>
+            <p class="text-3xl font-black text-green-600 dark:text-green-400 mt-1" id="kpiLowest">—</p>
+        </div>
+        <div class="kpi-card bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-sm border border-slate-200 dark:border-slate-700">
+            <p class="text-[11px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Last Cutoff (SM)</p>
+            <p class="text-3xl font-black text-amber-600 dark:text-amber-400 mt-1" id="kpiLast">—</p>
+        </div>
+        <div class="kpi-card bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-sm border border-slate-200 dark:border-slate-700 col-span-2 lg:col-span-1">
+            <p class="text-[11px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Top Branch</p>
+            <p class="text-sm font-black text-red-600 dark:text-red-400 mt-1 leading-tight" id="kpiTopBranch">—</p>
+        </div>
+    </div>
+
+    <!-- College-Specific Cutoff Charts (NEW - user picks college) -->
+    <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-700 fade-in">
+        <div class="flex flex-wrap items-center justify-between mb-4 gap-3">
+            <h2 class="text-sm font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">College Branch Cutoffs (SM)</h2>
+            <div class="flex items-center gap-2">
+                <select id="cutoffCollegeSelect" class="text-xs border border-slate-200 dark:border-slate-600 rounded-lg px-2 py-1.5 bg-slate-50 dark:bg-slate-700 dark:text-white min-w-[220px]"><option value="">Choose College...</option></select>
+                <button id="cutoffLoadBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs px-4 py-1.5 rounded-lg transition-colors">Load</button>
+            </div>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div>
+                <h3 class="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider mb-2">🟢 Lowest Cutoff Rank (Opening)</h3>
+                <div class="relative" style="height:320px"><canvas id="chartLowest"></canvas></div>
+            </div>
+            <div>
+                <h3 class="text-xs font-bold text-red-500 dark:text-red-400 uppercase tracking-wider mb-2">🔴 Last Cutoff Rank (Closing)</h3>
+                <div class="relative" style="height:320px"><canvas id="chartLast"></canvas></div>
+            </div>
+        </div>
+        <div id="cutoffNoData" class="hidden text-center text-slate-400 dark:text-slate-500 py-8 text-sm">Select a college and click Load to view branch cutoffs.</div>
+    </div>
+
+    <!-- Charts Row: Top Colleges + Seats by Category -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 fade-in">
+
+        <!-- Chart: Top 10 Colleges for a course -->
+        <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-700">
+            <div class="flex flex-wrap items-center justify-between mb-4 gap-2">
+                <h2 class="text-sm font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Top 10 Colleges for Course</h2>
+                <select id="collegeChartCourse" class="text-xs border border-slate-200 dark:border-slate-600 rounded-lg px-2 py-1 bg-slate-50 dark:bg-slate-700 dark:text-white">
+                    <option value="CS">CS — Computer Science</option>
+                    <option value="EC">EC — Electronics</option>
+                    <option value="ME">ME — Mechanical</option>
+                    <option value="EE">EE — Electrical</option>
+                    <option value="CE">CE — Civil</option>
+                    <option value="AD">AD — AI & Data Science</option>
+                    <option value="AH">AH — AI & ML</option>
+                    <option value="CY">CY — Cyber Security</option>
+                    <option value="RB">RB — Robotics</option>
+                </select>
+            </div>
+            <div class="relative" style="height:360px">
+                <canvas id="chartColleges"></canvas>
+            </div>
+        </div>
+
+        <!-- Chart: Seats by Category -->
+        <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-700">
+            <div class="flex flex-wrap items-center justify-between mb-4 gap-2">
+                <h2 class="text-sm font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Seat Distribution by Category</h2>
+                <select id="bandCollegeSelect" class="text-xs border border-slate-200 dark:border-slate-600 rounded-lg px-2 py-1 bg-slate-50 dark:bg-slate-700 dark:text-white min-w-[180px]">
+                    <option value="">All Colleges</option>
+                </select>
+            </div>
+            <div class="relative" style="height:360px">
+                <canvas id="chartBands"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart: Phase Trends with college selector -->
+    <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-700 fade-in">
+        <div class="flex flex-wrap items-center justify-between mb-4 gap-2">
+            <h2 class="text-sm font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Phase 1 → 2 → 3 Cutoff Shift (SM)</h2>
+            <select id="phaseCollegeSelect" class="text-xs border border-slate-200 dark:border-slate-600 rounded-lg px-2 py-1 bg-slate-50 dark:bg-slate-700 dark:text-white min-w-[220px]">
+                <option value="">All Colleges (Top Branches)</option>
+            </select>
+        </div>
+        <div class="relative" style="height:340px">
+            <canvas id="chartPhases"></canvas>
+        </div>
+    </div>
+
+    <!-- Category Spread Table -->
+    <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-700 fade-in">
+        <div class="flex flex-wrap items-center justify-between mb-4 gap-2">
+            <h2 class="text-sm font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Category-Wise Rank Spread</h2>
+            <select id="catCollegeSelect" class="text-xs border border-slate-200 dark:border-slate-600 rounded-lg px-2 py-1 bg-slate-50 dark:bg-slate-700 dark:text-white min-w-[220px]">
+                <option value="">All Colleges</option>
+            </select>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left border-collapse">
+                <thead>
+                    <tr class="border-b border-slate-200 dark:border-slate-700 text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                        <th class="py-3 pr-4">Category</th>
+                        <th class="py-3 pr-4 text-right">Lowest Cutoff Rank</th>
+                        <th class="py-3 pr-4 text-right">Avg Closing Rank</th>
+                        <th class="py-3 text-right">Last Cutoff Rank</th>
+                    </tr>
+                </thead>
+                <tbody id="categoryTable" class="divide-y divide-slate-100 dark:divide-slate-700"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Top Branches Table -->
+    <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-700 fade-in">
+        <div class="flex flex-wrap items-center justify-between mb-4 gap-2">
+            <h2 class="text-sm font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">Most Competitive Branches (SM)</h2>
+            <select id="branchCollegeSelect" class="text-xs border border-slate-200 dark:border-slate-600 rounded-lg px-2 py-1 bg-slate-50 dark:bg-slate-700 dark:text-white min-w-[220px]">
+                <option value="">All Colleges</option>
+            </select>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left border-collapse">
+                <thead>
+                    <tr class="border-b border-slate-200 dark:border-slate-700 text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                        <th class="py-3 pr-4">#</th>
+                        <th class="py-3 pr-4">Branch</th>
+                        <th class="py-3 pr-4 text-right">Lowest Cutoff</th>
+                        <th class="py-3 text-right">Last Cutoff</th>
+                    </tr>
+                </thead>
+                <tbody id="branchTable" class="divide-y divide-slate-100 dark:divide-slate-700"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ⚔️ Head-to-Head College Comparator -->
+    <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-700 fade-in">
+        <h2 class="text-sm font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1">⚔️ Head-to-Head College Comparator</h2>
+        <p class="text-xs text-slate-400 dark:text-slate-500 mb-4">Compare two colleges course-by-course on SM cutoffs — lower last cutoff = admits deeper / more seats filled.</p>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3 mb-4">
+            <div class="lg:col-span-2">
+                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1">College A</label>
+                <select id="cmpCollegeA" class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg p-2 text-sm dark:text-white"><option value="">Choose College...</option></select>
+            </div>
+            <div class="lg:col-span-2">
+                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1">College B</label>
+                <select id="cmpCollegeB" class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg p-2 text-sm dark:text-white"><option value="">Choose College...</option></select>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1">Course (Optional)</label>
+                <select id="cmpCourse" class="w-full bg-slate-50 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg p-2 text-sm dark:text-white"><option value="">All Courses</option></select>
+            </div>
+        </div>
+        <div class="flex flex-wrap items-center gap-3">
+            <button id="cmpRunBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm px-6 py-2.5 rounded-full shadow-sm transition-colors">Compare Colleges</button>
+            <span id="cmpSummary" class="text-xs font-bold"></span>
+        </div>
+        <div id="cmpNoData" class="text-center text-slate-400 dark:text-slate-500 py-8 text-sm">Pick two colleges and hit Compare.</div>
+        <div id="cmpWrap" class="hidden mt-4">
+            <div class="relative mb-4" style="height:300px"><canvas id="cmpChart"></canvas></div>
+            <div class="overflow-x-auto max-h-[480px] overflow-y-auto rounded-xl border border-slate-200 dark:border-slate-700">
+                <table class="w-full text-left text-xs border-collapse">
+                    <thead class="sticky top-0 bg-slate-100 dark:bg-slate-700">
+                        <tr class="text-[11px] font-bold text-slate-400 dark:text-slate-300 uppercase tracking-wider">
+                            <th class="py-2.5 px-3">Course</th>
+                            <th class="py-2.5 px-3 text-indigo-600 dark:text-indigo-400">A Lowest</th>
+                            <th class="py-2.5 px-3 text-indigo-400 dark:text-indigo-300">A Last</th>
+                            <th class="py-2.5 px-3 text-teal-600 dark:text-teal-400">B Lowest</th>
+                            <th class="py-2.5 px-3 text-teal-400 dark:text-teal-300">B Last</th>
+                            <th class="py-2.5 px-3">Delta (B−A)</th>
+                            <th class="py-2.5 px-3">Edge</th>
+                        </tr>
+                    </thead>
+                    <tbody id="cmpTableBody" class="divide-y divide-slate-100 dark:divide-slate-700 font-medium"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🔥 College × Course Cutoff Heatmap -->
+    <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-700 fade-in">
+        <div class="flex flex-wrap items-center justify-between mb-4 gap-2">
+            <h2 class="text-sm font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">🔥 College × Course Cutoff Heatmap (SM)</h2>
+            <div class="flex items-center gap-2">
+                <label class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">Phase</label>
+                <select id="hmPhase" class="text-xs border border-slate-200 dark:border-slate-600 rounded-lg px-2 py-1.5 bg-slate-50 dark:bg-slate-700 dark:text-white">
+                    <option value="Phase1">Phase 1</option>
+                    <option value="Phase2">Phase 2</option>
+                    <option value="Phase3" selected>Phase 3</option>
+                </select>
+            </div>
+        </div>
+        <p class="text-xs text-slate-400 dark:text-slate-500 mb-4">Colour = lowest SM opening rank (teal = most competitive, red = easiest). Hover a cell for details · click a cell to drill into the actual students.</p>
+        <div id="hmLoading" class="text-center text-slate-400 dark:text-slate-500 py-10 text-sm">Loading heatmap…</div>
+        <div id="hmWrap" class="hidden overflow-x-auto max-h-[520px] overflow-y-auto rounded-xl border border-slate-200 dark:border-slate-700">
+            <table id="hmTable" class="w-full text-center text-[11px] border-collapse">
+                <thead id="hmHead" class="sticky top-0 bg-slate-100 dark:bg-slate-700 z-10"></thead>
+                <tbody id="hmBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 📈 Opening vs Closing Rank (Volatility) -->
+    <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-700 fade-in">
+        <div class="flex flex-wrap items-center justify-between mb-4 gap-2">
+            <h2 class="text-sm font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">📈 Opening vs Closing Rank (Volatility)</h2>
+            <div class="flex items-center gap-2">
+                <select id="volCourse" class="text-xs border border-slate-200 dark:border-slate-600 rounded-lg px-2 py-1 bg-slate-50 dark:bg-slate-700 dark:text-white"></select>
+                <select id="volPhase" class="text-xs border border-slate-200 dark:border-slate-600 rounded-lg px-2 py-1.5 bg-slate-50 dark:bg-slate-700 dark:text-white">
+                    <option value="Phase1">Phase 1</option>
+                    <option value="Phase2">Phase 2</option>
+                    <option value="Phase3" selected>Phase 3</option>
+                </select>
+            </div>
+        </div>
+        <p class="text-xs text-slate-400 dark:text-slate-500 mb-4">Each dot is a college offering the selected course · x = lowest (opening) SM rank · y = last (closing) rank · size = seats. Colleges far above the diagonal close much deeper than they open — volatile, worth a second look.</p>
+        <div class="relative" style="height:380px"><canvas id="volChart"></canvas></div>
+    </div>
+
+    <!-- Drill-down modal (click a heatmap cell) -->
+    <div id="drillModal" class="hidden fixed inset-0 z-[999] bg-black/60 flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-3xl max-h-[85vh] flex flex-col border border-slate-200 dark:border-slate-700">
+            <div class="flex items-center justify-between px-5 py-3 border-b border-slate-200 dark:border-slate-700">
+                <h3 id="drillTitle" class="text-sm font-black text-slate-700 dark:text-slate-200"></h3>
+                <button id="drillClose" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-2xl font-bold leading-none px-2">×</button>
+            </div>
+            <div class="overflow-y-auto">
+                <table class="w-full text-left text-xs border-collapse">
+                    <thead class="sticky top-0 bg-slate-100 dark:bg-slate-700">
+                        <tr class="text-[11px] font-bold text-slate-400 dark:text-slate-300 uppercase tracking-wider">
+                            <th class="py-2.5 px-3">Reg No</th>
+                            <th class="py-2.5 px-3">Rank</th>
+                            <th class="py-2.5 px-3">Category</th>
+                            <th class="py-2.5 px-3">Seat</th>
+                            <th class="py-2.5 px-3">Course</th>
+                        </tr>
+                    </thead>
+                    <tbody id="drillBody" class="divide-y divide-slate-100 dark:divide-slate-700 font-medium"></tbody>
+                </table>
+            </div>
+            <div id="drillFoot" class="px-5 py-3 border-t border-slate-200 dark:border-slate-700 text-[11px] text-slate-400"></div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // ── Dark Mode ────────────────────────────────────────────────────
+    function initDarkMode() {
+        const saved = localStorage.getItem('keam_dark_mode');
+        if (saved === 'true' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        }
+        updateDarkIcon();
+    }
+    function toggleDarkMode() {
+        document.documentElement.classList.toggle('dark');
+        localStorage.setItem('keam_dark_mode', document.documentElement.classList.contains('dark'));
+        updateDarkIcon();
+        loadAll();
+    }
+    function updateDarkIcon() {
+        document.getElementById('darkIcon').textContent = document.documentElement.classList.contains('dark') ? '☀️' : '🌙';
+    }
+    function isDark() { return document.documentElement.classList.contains('dark'); }
+
+    // ── Chart instances ──────────────────────────────────────────────
+    let chartColleges = null, chartBands = null, chartPhases = null;
+    let chartLowest = null, chartLast = null;
+    let migSelectors = {};
+    let allColleges = [], allCourses = [];
+
+    const PHASE_COLORS = {
+        'Phase1': 'rgba(239,68,68,0.85)',
+        'Phase2': 'rgba(59,130,246,0.85)',
+        'Phase3': 'rgba(16,185,129,0.85)'
+    };
+
+    const CATEGORY_COLORS = [
+        '#2563eb','#10b981','#f59e0b','#8b5cf6','#ef4444',
+        '#06b6d4','#ec4899','#84cc16','#f97316','#6366f1',
+        '#14b8a6','#e11d48','#a855f7','#eab308','#0ea5e9',
+        '#d946ef','#22c55e','#f43f5e','#3b82f6','#64748b'
+    ];
+
+    // ── Analytics telemetry (fire-and-forget) ─────────────────────────
+    function sendTelemetry(action, searchData, clicked) {
+        try {
+            var payload = JSON.stringify({ action: action || 'Event', search_data: searchData || '', clicked: clicked || '', page: '/statistics' });
+            if (navigator.sendBeacon) { navigator.sendBeacon('/api/telemetry', payload); }
+            else { fetch('/api/telemetry', { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: payload, keepalive: true }); }
+        } catch (e) {}
+    }
+
+    // ── Helpers ──────────────────────────────────────────────────────
+    function getYear() { return document.getElementById('globalYear').value; }
+
+    function shortLabel(name, max=30) {
+        const parts = name.split(' - ');
+        const label = parts.length > 1 ? parts.slice(1).join(' - ') : name;
+        return label.length > max ? label.slice(0, max) + '…' : label;
+    }
+
+    function chartColors() {
+        return {
+            gridColor: isDark() ? 'rgba(71,85,105,0.4)' : 'rgba(203,213,225,0.5)',
+            tickColor: isDark() ? '#94a3b8' : '#64748b',
+            tooltipBg: isDark() ? '#1e293b' : '#ffffff',
+            tooltipText: isDark() ? '#e2e8f0' : '#0f172a',
+        };
+    }
+
+    // Populate college options in all selectors
+    function populateCollegeSelectors(colleges) {
+        const selectors = ['cutoffCollegeSelect', 'bandCollegeSelect', 'phaseCollegeSelect', 'catCollegeSelect', 'branchCollegeSelect'];
+        selectors.forEach(id => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            const current = el.value;
+            el.innerHTML = '<option value="">' + (id === 'cutoffCollegeSelect' ? 'Choose College...' : 'All Colleges') + '</option>';
+            colleges.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c; opt.textContent = shortLabel(c, 50);
+                el.appendChild(opt);
+            });
+            if (current) el.value = current;
+        });
+    }
+
+    // ── KPI ──────────────────────────────────────────────────────────
+    async function loadKPI() {
+        try {
+            const r = await fetch(`/api/stats/kpi?year=${getYear()}`);
+            const d = await r.json();
+            document.getElementById('kpiColleges').textContent  = d.total_colleges?.toLocaleString() ?? '—';
+            document.getElementById('kpiCourses').textContent   = d.total_courses?.toLocaleString()  ?? '—';
+            document.getElementById('kpiLowest').textContent    = d.lowest_cutoff?.toLocaleString()   ?? '—';
+            document.getElementById('kpiLast').textContent      = d.last_cutoff?.toLocaleString()     ?? '—';
+            document.getElementById('kpiTopBranch').textContent = d.top_branch ?? '—';
+        } catch(e) { console.error('KPI load error:', e); }
+    }
+
+    // ── College-Specific Cutoff Charts (Lowest + Last SEPARATE) ───────
+    async function loadCutoffCharts() {
+        const college = document.getElementById('cutoffCollegeSelect').value;
+        const noDataEl = document.getElementById('cutoffNoData');
+        if (!college) {
+            if (chartLowest) { chartLowest.destroy(); chartLowest = null; }
+            if (chartLast) { chartLast.destroy(); chartLast = null; }
+            noDataEl.classList.remove('hidden');
+            return;
+        }
+        noDataEl.classList.add('hidden');
+
+        try {
+            const r = await fetch(`/api/stats/college-cutoffs?year=${getYear()}&college=${encodeURIComponent(college)}`);
+            const data = await r.json();
+            if (!Array.isArray(data) || !data.length) {
+                if (chartLowest) { chartLowest.destroy(); chartLowest = null; }
+                if (chartLast) { chartLast.destroy(); chartLast = null; }
+                noDataEl.textContent = 'No SM cutoff data for this college/year.';
+                noDataEl.classList.remove('hidden');
+                return;
+            }
+
+            const labels = data.map(d => shortLabel(d.course, 22));
+            const lowest = data.map(d => d.lowest);
+            const last = data.map(d => d.last);
+            const cc = chartColors();
+
+            // Lowest cutoff chart
+            if (chartLowest) chartLowest.destroy();
+            chartLowest = new Chart(document.getElementById('chartLowest'), {
+                type: 'bar',
+                data: { labels, datasets: [{ label: 'Lowest Cutoff Rank', data: lowest, backgroundColor: 'rgba(16,185,129,0.8)', borderRadius: 4, barThickness: 16 }] },
+                options: {
+                    indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false }, tooltip: { backgroundColor: cc.tooltipBg, titleColor: cc.tooltipText, bodyColor: cc.tooltipText, callbacks: { label: ctx => ` Rank ${ctx.parsed.x?.toLocaleString()}` } } },
+                    scales: { x: { beginAtZero: true, ticks: { color: cc.tickColor }, grid: { color: cc.gridColor } }, y: { ticks: { color: cc.tickColor, font: { size: 10 } }, grid: { display: false } } }
+                }
+            });
+
+            // Last cutoff chart
+            if (chartLast) chartLast.destroy();
+            chartLast = new Chart(document.getElementById('chartLast'), {
+                type: 'bar',
+                data: { labels, datasets: [{ label: 'Last Cutoff Rank', data: last, backgroundColor: 'rgba(239,68,68,0.75)', borderRadius: 4, barThickness: 16 }] },
+                options: {
+                    indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false }, tooltip: { backgroundColor: cc.tooltipBg, titleColor: cc.tooltipText, bodyColor: cc.tooltipText, callbacks: { label: ctx => ` Rank ${ctx.parsed.x?.toLocaleString()}` } } },
+                    scales: { x: { beginAtZero: true, ticks: { color: cc.tickColor }, grid: { color: cc.gridColor } }, y: { ticks: { color: cc.tickColor, font: { size: 10 } }, grid: { display: false } } }
+                }
+            });
+        } catch(e) { console.error('Cutoff charts error:', e); }
+    }
+
+    // ── Top 10 Colleges for a Course ─────────────────────────────────
+    async function loadCollegeChart() {
+        try {
+            const course = document.getElementById('collegeChartCourse').value;
+            const r = await fetch(`/api/stats/top-colleges?year=${getYear()}&course=${encodeURIComponent(course)}`);
+            const data = await r.json();
+            if (!Array.isArray(data) || data.length === 0) {
+                if (chartColleges) chartColleges.destroy();
+                chartColleges = null;
+                return;
+            }
+
+            const labels = data.map(d => shortLabel(d.college, 26));
+            const lowest = data.map(d => d.cutoff);
+            const last = data.map(d => d.last);
+            const cc = chartColors();
+
+            if (chartColleges) chartColleges.destroy();
+            chartColleges = new Chart(document.getElementById('chartColleges'), {
+                type: 'bar',
+                data: {
+                    labels,
+                    datasets: [
+                        { label: 'Lowest Cutoff', data: lowest, backgroundColor: 'rgba(16,185,129,0.8)', borderRadius: 4, barThickness: 11 },
+                        { label: 'Last Cutoff', data: last, backgroundColor: 'rgba(239,68,68,0.7)', borderRadius: 4, barThickness: 11 }
+                    ]
+                },
+                options: {
+                    indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'top', labels: { color: cc.tickColor, font: { size: 11, weight: 'bold' } } },
+                        tooltip: { backgroundColor: cc.tooltipBg, titleColor: cc.tooltipText, bodyColor: cc.tooltipText, callbacks: { label: ctx => ` ${ctx.dataset.label}: Rank ${ctx.parsed.x?.toLocaleString()}` } }
+                    },
+                    scales: {
+                        x: { beginAtZero: true, title: { display: true, text: 'Rank', color: cc.tickColor }, ticks: { color: cc.tickColor }, grid: { color: cc.gridColor } },
+                        y: { ticks: { color: cc.tickColor, font: { size: 10 } }, grid: { display: false } }
+                    }
+                }
+            });
+        } catch(e) { console.error('College chart error:', e); }
+    }
+
+    // ── Seats by Category (doughnut) with optional college filter ─────
+    async function loadBandChart() {
+        try {
+            const college = document.getElementById('bandCollegeSelect').value;
+            let url = `/api/stats/rank-bands?year=${getYear()}`;
+            if (college) url += `&college=${encodeURIComponent(college)}`;
+            const r = await fetch(url);
+            const data = await r.json();
+            if (!Array.isArray(data) || data.length === 0) {
+                if (chartBands) chartBands.destroy();
+                chartBands = null;
+                return;
+            }
+
+            const cc = chartColors();
+            if (chartBands) chartBands.destroy();
+            chartBands = new Chart(document.getElementById('chartBands'), {
+                type: 'doughnut',
+                data: {
+                    labels: data.map(d => d.band),
+                    datasets: [{ data: data.map(d => d.seats), backgroundColor: CATEGORY_COLORS.slice(0, data.length), borderWidth: 2, borderColor: isDark() ? '#1e293b' : '#ffffff' }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'right', labels: { color: cc.tickColor, font: { size: 11 }, padding: 12 } },
+                        tooltip: { backgroundColor: cc.tooltipBg, titleColor: cc.tooltipText, bodyColor: cc.tooltipText, callbacks: { label: ctx => ` ${ctx.label}: ${ctx.parsed.toLocaleString()} seats` } }
+                    }
+                }
+        });
+        } catch(e) { console.error('Band chart error:', e); }
+    }
+
+    // ── Phase Trends with optional college filter ─────────────────────
+    async function loadPhaseChart() {
+        try {
+            const college = document.getElementById('phaseCollegeSelect').value;
+            let url = `/api/stats/phase-trends?year=${getYear()}`;
+            if (college) url += `&college=${encodeURIComponent(college)}`;
+            const r = await fetch(url);
+            const d = await r.json();
+            if (!d.courses || d.courses.length === 0) {
+                if (chartPhases) chartPhases.destroy();
+                chartPhases = null;
+                return;
+            }
+
+            const cc = chartColors();
+            const datasets = d.phases.map(phase => ({
+                label: phase,
+                data: d.courses.map(c => d.data[phase]?.[c] ?? null),
+                backgroundColor: PHASE_COLORS[phase] ?? 'rgba(100,116,139,0.6)',
+                borderRadius: 4, barThickness: 14
+            }));
+
+            if (chartPhases) chartPhases.destroy();
+            chartPhases = new Chart(document.getElementById('chartPhases'), {
+                type: 'bar',
+                data: { labels: d.courses.map(c => shortLabel(c, 20)), datasets },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'top', labels: { color: cc.tickColor, font: { size: 11, weight: 'bold' } } },
+                        tooltip: { mode: 'index', intersect: false, backgroundColor: cc.tooltipBg, titleColor: cc.tooltipText, bodyColor: cc.tooltipText, callbacks: { label: ctx => ` ${ctx.dataset.label}: Rank ${ctx.parsed.y?.toLocaleString() ?? '—'}` } }
+                    },
+                    scales: {
+                        x: { stacked: false, ticks: { color: cc.tickColor, font: { size: 10 } }, grid: { display: false } },
+                        y: { beginAtZero: true, title: { display: true, text: 'Cutoff Rank', color: cc.tickColor }, ticks: { color: cc.tickColor }, grid: { color: cc.gridColor } }
+                    }
+                }
+            });
+        } catch(e) { console.error('Phase chart error:', e); }
+    }
+
+    // ── Category Table with optional college filter ───────────────────
+    async function loadCategoryTable() {
+        try {
+            const college = document.getElementById('catCollegeSelect').value;
+            let url = `/api/stats/category-spread?year=${getYear()}`;
+            if (college) url += `&college=${encodeURIComponent(college)}`;
+            const r = await fetch(url);
+            const data = await r.json();
+            const tbody = document.getElementById('categoryTable');
+            tbody.innerHTML = '';
+            const catLabels = {
+                SM:'SM — State Merit', EZ:'EZ — Ezhava', MU:'MU — Muslim', LA:'LA — Latin Catholic',
+                BH:'BH — Backward Hindu', SC:'SC — Scheduled Caste', ST:'ST — Scheduled Tribe',
+                EW:'EW — Economically Weaker', FW:'FW — Forward', VK:'VK — Viswakarma',
+                DV:'DV — Dheevara', KN:'KN — Kudumbi/Nadar', BX:'BX — Backward Christian',
+                KU:'KU — KSCB/KUDB', DK:'DK — OEC', CC:'CC — Anglo-Indian',
+                MM:'MM — Mappila', PT:'PT — Pulaya/Thandan', CG:'CG — Converts', GN:'GN — General'
+            };
+            const entries = Object.entries(data);
+            if (!entries.length) {
+                tbody.innerHTML = '<tr><td colspan="4" class="py-6 text-center text-slate-400 dark:text-slate-500">No data available.</td></tr>';
+                return;
+            }
+            entries.forEach(([cat, v]) => {
+                tbody.insertAdjacentHTML('beforeend', `
+                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                        <td class="py-3 pr-4 font-bold text-slate-700 dark:text-slate-200">${catLabels[cat] ?? cat}</td>
+                        <td class="py-3 pr-4 text-right text-emerald-600 dark:text-emerald-400 font-black">${v.best.toLocaleString()}</td>
+                        <td class="py-3 pr-4 text-right text-blue-600 dark:text-blue-400 font-semibold">${v.avg.toLocaleString()}</td>
+                        <td class="py-3 text-right text-red-500 dark:text-red-400 font-semibold">${v.worst.toLocaleString()}</td>
+                    </tr>
+                `);
+            });
+        } catch(e) { console.error('Category table error:', e); }
+    }
+
+    // ── Branch Table with optional college filter ─────────────────────
+    async function loadBranchTable() {
+        try {
+            const college = document.getElementById('branchCollegeSelect').value;
+            let url = `/api/stats/top-branches?year=${getYear()}`;
+            if (college) url += `&college=${encodeURIComponent(college)}`;
+            const r = await fetch(url);
+            const data = await r.json();
+            const tbody = document.getElementById('branchTable');
+            tbody.innerHTML = '';
+            if (!Array.isArray(data) || !data.length) {
+                tbody.innerHTML = '<tr><td colspan="4" class="py-6 text-center text-slate-400 dark:text-slate-500">No data available.</td></tr>';
+                return;
+            }
+            data.forEach((row, i) => {
+                tbody.insertAdjacentHTML('beforeend', `
+                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                        <td class="py-3 pr-4 text-slate-400 dark:text-slate-500 font-bold">${i + 1}</td>
+                        <td class="py-3 pr-4 font-semibold text-slate-800 dark:text-slate-200">${row.course}</td>
+                        <td class="py-3 pr-4 text-right font-black text-emerald-600 dark:text-emerald-400">${row.cutoff.toLocaleString()}</td>
+                        <td class="py-3 text-right font-black text-red-500 dark:text-red-400">${row.last.toLocaleString()}</td>
+                    </tr>
+                `);
+            });
+        } catch(e) { console.error('Branch table error:', e); }
+    }
+
+    // ── Migration Tracker ────────────────────────────────────────────
+    let migInitialized = false;
+    async function initMigration() {
+        if (migInitialized) return;
+        migInitialized = true;
+
+        migSelectors.college = new TomSelect('#migCollege', { create: false, sortField: { field: 'text', direction: 'asc' } });
+        migSelectors.course  = new TomSelect('#migCourse',  { create: false, sortField: { field: 'text', direction: 'asc' } });
+
+        try {
+            const [yrRes, colRes, crsRes] = await Promise.all([
+                fetch('/api/years'), fetch('/api/colleges'), fetch('/api/courses')
+            ]);
+            const [years, colleges, courses] = await Promise.all([yrRes.json(), colRes.json(), crsRes.json()]);
+
+            allColleges = colleges;
+            allCourses = courses;
+
+            // Populate global year selector with available years
+            const globalYearEl = document.getElementById('globalYear');
+            const currentGlobalYear = globalYearEl.value;
+            globalYearEl.innerHTML = '';
+            years.forEach(y => {
+                const o = document.createElement('option');
+                o.value = y; o.textContent = y;
+                globalYearEl.appendChild(o);
+            });
+            // Restore selection or pick first
+            if (years.includes(parseInt(currentGlobalYear)) || years.includes(currentGlobalYear)) {
+                globalYearEl.value = currentGlobalYear;
+            } else if (years.length) {
+                globalYearEl.value = years[0];
+            }
+
+            colleges.forEach(c => migSelectors.college.addOption({ value: c, text: c }));
+            migSelectors.college.setValue('', true);
+
+            courses.forEach(c => migSelectors.course.addOption({ value: c, text: c }));
+            migSelectors.course.setValue('', true);
+
+            // Populate all college filter dropdowns
+            populateCollegeSelectors(colleges);
+        } catch(e) { console.error('Migration init error:', e); }
+
+        document.getElementById('migSearchBtn').addEventListener('click', runMigration);
+    }
+
+    async function runMigration() {
+        const btn = document.getElementById('migSearchBtn');
+        sendTelemetry('Migrations', JSON.stringify({ year: getYear(), from_phase: document.getElementById('migFromPhase').value, to_phase: document.getElementById('migToPhase').value }), 'mig_search');
+
+        btn.disabled = true; btn.textContent = '⏳ Searching...';
+        document.getElementById('migResults').classList.add('hidden');
+        document.getElementById('migNoData').classList.add('hidden');
+        document.getElementById('migOrbitWrap').classList.add('hidden');
+
+        const params = new URLSearchParams({
+            year: getYear(), from_phase: document.getElementById('migFromPhase').value,
+            to_phase: document.getElementById('migToPhase').value
+        });
+        const col = migSelectors.college.getValue();
+        const crs = migSelectors.course.getValue();
+        if (col) params.append('college', col);
+        if (crs) params.append('course', crs);
+
+        try {
+            const res = await fetch(`/api/migrations?${params}`);
+            const data = await res.json();
+            btn.disabled = false; btn.textContent = '🔍 Find Migrations';
+
+            if (data.error) { alert('Error: ' + data.error); return; }
+            if (!data.total_migrations || data.total_migrations === 0) {
+                document.getElementById('migNoData').classList.remove('hidden');
+                document.getElementById('migOrbitWrap').classList.add('hidden');
+                return;
+            }
+
+            document.getElementById('migTotalCount').textContent = data.total_migrations.toLocaleString();
+
+            const destEl = document.getElementById('migTopDest');
+            destEl.innerHTML = data.top_destinations.length
+                ? data.top_destinations.map(d => `<li><strong>${d.count}</strong> → ${shortLabel(d.college)}</li>`).join('')
+                : '<li class="text-slate-400">—</li>';
+
+            const srcEl = document.getElementById('migTopSrc');
+            srcEl.innerHTML = data.top_sources.length
+                ? data.top_sources.map(s => `<li><strong>${s.count}</strong> ← ${shortLabel(s.college)}</li>`).join('')
+                : '<li class="text-slate-400">—</li>';
+
+            const tbody = document.getElementById('migTableBody');
+            tbody.innerHTML = data.migrations.slice(0, 200).map(m => `
+                <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/50">
+                    <td class="py-2 px-3 text-blue-600 dark:text-blue-400 font-bold">${m.appl_no}</td>
+                    <td class="py-2 px-3 font-black text-blue-800 dark:text-blue-300">${m.rank}</td>
+                    <td class="py-2 px-3 text-red-600 dark:text-red-400 font-semibold">${shortLabel(m.from_college)}</td>
+                    <td class="py-2 px-3 text-red-400 dark:text-red-300">${shortLabel(m.from_course, 20)}</td>
+                    <td class="py-2 px-3 text-emerald-600 dark:text-emerald-400 font-semibold">${shortLabel(m.to_college)}</td>
+                    <td class="py-2 px-3 text-emerald-400 dark:text-emerald-300">${shortLabel(m.to_course, 20)}</td>
+                    <td class="py-2 px-3 text-slate-500 dark:text-slate-400">${m.category}</td>
+                </tr>
+            `).join('');
+
+            document.getElementById('migResults').classList.remove('hidden');
+
+            // Render orbit visualization
+            renderMigrationGalaxy(data);
+        } catch(e) {
+            btn.disabled = false; btn.textContent = '🔍 Find Migrations';
+            console.error('Migration error:', e);
+            alert('Network error. Please try again.');
+        }
+    }
+
+    // ── Workflow Route Map (n8n style) ─────────────────────────────
+    function renderMigrationGalaxy(migData) {
+        const wrap = document.getElementById('migOrbitWrap');
+        const svg = d3.select('#migOrbitSvg');
+        svg.selectAll('*').remove();
+        d3.selectAll('.wf-tooltip').remove();
+
+        const selectedCollege = migSelectors.college.getValue();
+        if (!selectedCollege || !migData || !migData.total_migrations) {
+            wrap.classList.add('hidden');
+            return;
+        }
+        wrap.classList.remove('hidden');
+
+        // ── Build left (outgoing) and right (incoming) lists ──
+        // leftMap/rightMap hold counts; leftStudents/rightStudents hold the
+        // actual per-student records so hover tooltips can list them.
+        const leftMap = {};       // students LEFT the selected college TO here
+        const rightMap = {};      // students CAME to selected college FROM here
+        const leftStudents = {};  // dest college -> [migration records]
+        const rightStudents = {}; // source college -> [migration records]
+        (migData.migrations || []).forEach(m => {
+            if (m.from_college === selectedCollege && m.to_college && m.to_college !== selectedCollege) {
+                leftMap[m.to_college] = (leftMap[m.to_college] || 0) + 1;
+                (leftStudents[m.to_college] = leftStudents[m.to_college] || []).push(m);
+            }
+            if (m.to_college === selectedCollege && m.from_college && m.from_college !== selectedCollege) {
+                rightMap[m.from_college] = (rightMap[m.from_college] || 0) + 1;
+                (rightStudents[m.from_college] = rightStudents[m.from_college] || []).push(m);
+            }
+        });
+
+        let leftNodes = Object.entries(leftMap).map(([name, count]) => ({ name, count, students: leftStudents[name] }));
+        let rightNodes = Object.entries(rightMap).map(([name, count]) => ({ name, count, students: rightStudents[name] }));
+        leftNodes.sort((a, b) => b.count - a.count);
+        rightNodes.sort((a, b) => b.count - a.count);
+        leftNodes = leftNodes.slice(0, 20);
+        rightNodes = rightNodes.slice(0, 20);
+
+        if (!leftNodes.length && !rightNodes.length) { wrap.classList.add('hidden'); return; }
+
+        // ── Dimensions ──
+        const nodeW = 240, nodeH = 44, nodeGap = 12;
+        const centerW = 280, centerH = 56;
+        const colPad = 80; // horizontal gap between columns and center
+        const maxSide = Math.max(leftNodes.length, rightNodes.length, 1);
+        const contentH = Math.max(maxSide * (nodeH + nodeGap) + 60, centerH + 100);
+        const W = nodeW + colPad + centerW + colPad + nodeW + 80; // ~1000
+        const H = contentH + 80;
+
+        svg.attr('viewBox', `0 0 ${W} ${H}`).style('width', '100%').style('height', 'auto').style('min-height', Math.min(H, 900) + 'px');
+
+        const dark = isDark();
+
+        // ── Dot grid background ──
+        const dotGroup = svg.append('g');
+        for (let gx = 20; gx < W; gx += 24) {
+            for (let gy = 20; gy < H; gy += 24) {
+                dotGroup.append('circle')
+                    .attr('cx', gx).attr('cy', gy).attr('r', 1.2)
+                    .attr('class', 'wf-grid-dot')
+                    .attr('fill', dark ? '#64748b' : '#94a3b8');
+            }
+        }
+
+        // ── Positions ──
+        const centerX = W / 2 - centerW / 2;
+        const centerY = H / 2 - centerH / 2;
+        const centerMidX = W / 2;
+        const centerMidY = H / 2;
+
+        const leftColX = 30;
+        const rightColX = W - nodeW - 30;
+        const leftStartY = Math.max(40, centerMidY - (leftNodes.length * (nodeH + nodeGap)) / 2);
+        const rightStartY = Math.max(40, centerMidY - (rightNodes.length * (nodeH + nodeGap)) / 2);
+
+        // ── Defs ──
+        const defs = svg.append('defs');
+
+        // Soft shadow
+        const shadow = defs.append('filter').attr('id', 'cardShadow').attr('x', '-10%').attr('y', '-10%').attr('width', '120%').attr('height', '130%');
+        shadow.append('feDropShadow').attr('dx', '0').attr('dy', '2').attr('stdDeviation', '4').attr('flood-color', dark ? 'rgba(0,0,0,0.4)' : 'rgba(0,0,0,0.1)');
+
+        // ── Rich tooltip (hover a node to inspect its students) ──
+        const tooltip = d3.select('body').append('div').attr('class', 'wf-tooltip').style('opacity', 0);
+        let tooltipTimer = null;
+
+        // Keep the tooltip open while the cursor is inside it so the student
+        // list can be scrolled; otherwise hide it shortly after leaving a node.
+        tooltip.on('mouseenter', function() { clearTimeout(tooltipTimer); })
+               .on('mouseleave', function() { tooltip.style('opacity', 0); });
+
+        function tipShow(html, event) {
+            clearTimeout(tooltipTimer);
+            tooltip.html(html).style('opacity', 1);
+            tipMove(event);
+        }
+        function tipMove(event) {
+            const el = tooltip.node();
+            const tw = el.offsetWidth || 400;
+            const th = el.offsetHeight || 300;
+            let x = event.clientX + 14;
+            let y = event.clientY - 10;
+            if (x + tw > window.innerWidth - 8) x = event.clientX - tw - 14;
+            if (y + th > window.innerHeight - 8) y = window.innerHeight - th - 8;
+            tooltip.style('left', x + 'px').style('top', Math.max(8, y) + 'px');
+        }
+        function tipHide() {
+            clearTimeout(tooltipTimer);
+            tooltipTimer = setTimeout(function() { tooltip.style('opacity', 0); }, 220);
+        }
+
+        // Build the student list rows: appl no · rank · category/seat · left → joined course
+        function studentRows(students) {
+            const maxRows = 100;
+            const rows = (students || []).slice(0, maxRows).map(m => {
+                const appl = m.appl_no && m.appl_no !== 'N/A' ? '#' + m.appl_no : m.appl_no || '—';
+                const rk = m.rank !== 'N/A' && m.rank ? 'R' + m.rank : 'N/A';
+                const cat = (m.category || '') + (m.seat_type && m.seat_type !== 'N/A' ? ' · ' + m.seat_type : '');
+                return `<div class="wf-tip-row">
+                    <span class="wf-tip-appl">${appl}</span>
+                    <span class="wf-tip-rank">${rk}</span>
+                    <span class="wf-tip-cat">${cat}</span>
+                    <span class="wf-tip-course">${shortLabel(m.from_course, 24)} → ${shortLabel(m.to_course, 24)}</span>
+                </div>`;
+            }).join('');
+            const more = students.length > maxRows
+                ? `<div class="wf-tip-more">…and ${students.length - maxRows} more (shown up to ${maxRows})</div>` : '';
+            return rows + more;
+        }
+
+        // Left node: students who LEFT the selected college for this destination
+        function leftTooltip(n) {
+            const accent = dark ? '#fca5a5' : '#dc2626';
+            return `
+                <div style="color:${accent};font-weight:900">${shortLabel(n.name, 60)}</div>
+                <div class="wf-tip-sub">← ${n.count} student${n.count > 1 ? 's' : ''} left ${shortLabel(selectedCollege, 42)} for this college</div>
+                <div class="wf-tip-caption">Left course → joined course</div>
+                <div class="wf-tip-list">${studentRows(n.students)}</div>`;
+        }
+
+        // Right node: students who CAME from this source to the selected college
+        function rightTooltip(n) {
+            const accent = dark ? '#6ee7b7' : '#059669';
+            return `
+                <div style="color:${accent};font-weight:900">${shortLabel(n.name, 60)}</div>
+                <div class="wf-tip-sub">→ ${n.count} student${n.count > 1 ? 's' : ''} came from this college to ${shortLabel(selectedCollege, 42)}</div>
+                <div class="wf-tip-caption">Came with course → joined course</div>
+                <div class="wf-tip-list">${studentRows(n.students)}</div>`;
+        }
+
+        // ── Draw curved connections ──
+        const linkGroup = svg.append('g');
+
+        function drawLink(fromX, fromY, toX, toY, color, thickness) {
+            const midX = (fromX + toX) / 2;
+            linkGroup.append('path')
+                .attr('d', `M${fromX},${fromY} C${midX},${fromY} ${midX},${toY} ${toX},${toY}`)
+                .attr('class', 'wf-link')
+                .style('stroke', color)
+                .style('stroke-width', Math.max(1.5, Math.min(4, thickness)))
+                .style('opacity', 0)
+                .transition().duration(600).delay(200).style('opacity', 1);
+        }
+
+        // ── Draw left nodes (outgoing — students LEFT) ──
+        const leftGroup = svg.append('g');
+        leftNodes.forEach((n, i) => {
+            const x = leftColX;
+            const y = leftStartY + i * (nodeH + nodeGap);
+            const midY = y + nodeH / 2;
+
+            // Curved connector: right edge of left card → left edge of center card
+            const thickness = Math.sqrt(n.count) * 1.2;
+            const color = dark ? 'rgba(248,113,113,0.5)' : 'rgba(220,38,38,0.35)';
+            drawLink(x + nodeW, midY, centerX, centerMidY, color, thickness);
+
+            // Card rect
+            const g = leftGroup.append('g').style('opacity', 0);
+            g.transition().delay(100 + i * 40).duration(500).ease(d3.easeCubicOut).style('opacity', 1);
+
+            g.append('rect')
+                .attr('x', x).attr('y', y)
+                .attr('width', nodeW).attr('height', nodeH)
+                .attr('class', 'wf-node-rect')
+                .attr('fill', dark ? 'rgba(127,29,29,0.35)' : 'rgba(254,226,226,0.8)')
+                .attr('stroke', dark ? 'rgba(248,113,113,0.3)' : 'rgba(252,165,165,0.6)')
+                .attr('stroke-width', 1.5)
+                .attr('filter', 'url(#cardShadow)');
+
+            // Count bubble (left side of card)
+            g.append('rect')
+                .attr('x', x + 6).attr('y', y + 8)
+                .attr('width', 36).attr('height', nodeH - 16)
+                .attr('rx', 8).attr('ry', 8)
+                .attr('fill', dark ? 'rgba(239,68,68,0.7)' : 'rgba(239,68,68,0.8)');
+            g.append('text')
+                .attr('x', x + 24).attr('y', midY + 1)
+                .attr('text-anchor', 'middle').attr('dy', '0.35em')
+                .attr('fill', '#fff').attr('font-size', '13px').attr('font-weight', '900')
+                .text(n.count);
+
+            // Name
+            g.append('text')
+                .attr('x', x + 50).attr('y', midY + 1)
+                .attr('dy', '0.35em')
+                .attr('fill', dark ? '#fca5a5' : '#991b1b')
+                .attr('font-size', '11px').attr('font-weight', '700')
+                .text(shortLabel(n.name, 22));
+
+            // Hover → list every student who left to this college (course + rank + category)
+            g.append('rect').attr('x', x).attr('y', y).attr('width', nodeW).attr('height', nodeH)
+                .attr('fill', 'transparent').style('cursor', 'pointer')
+                .on('mouseover', function(event) { tipShow(leftTooltip(n), event); })
+                .on('mousemove', tipMove)
+                .on('mouseout', tipHide);
+        });
+
+        // ── Draw right nodes (incoming — students CAME) ──
+        const rightGroup = svg.append('g');
+        rightNodes.forEach((n, i) => {
+            const x = rightColX;
+            const y = rightStartY + i * (nodeH + nodeGap);
+            const midY = y + nodeH / 2;
+
+            // Curved connector: right edge of center → left edge of right card
+            const thickness = Math.sqrt(n.count) * 1.2;
+            const color = dark ? 'rgba(52,211,153,0.5)' : 'rgba(5,150,105,0.35)';
+            drawLink(centerX + centerW, centerMidY, x, midY, color, thickness);
+
+            const g = rightGroup.append('g').style('opacity', 0);
+            g.transition().delay(100 + i * 40).duration(500).ease(d3.easeCubicOut).style('opacity', 1);
+
+            g.append('rect')
+                .attr('x', x).attr('y', y)
+                .attr('width', nodeW).attr('height', nodeH)
+                .attr('class', 'wf-node-rect')
+                .attr('fill', dark ? 'rgba(6,78,59,0.35)' : 'rgba(209,250,229,0.8)')
+                .attr('stroke', dark ? 'rgba(52,211,153,0.3)' : 'rgba(110,231,183,0.6)')
+                .attr('stroke-width', 1.5)
+                .attr('filter', 'url(#cardShadow)');
+
+            // Count bubble (right side of card)
+            g.append('rect')
+                .attr('x', x + nodeW - 42).attr('y', y + 8)
+                .attr('width', 36).attr('height', nodeH - 16)
+                .attr('rx', 8).attr('ry', 8)
+                .attr('fill', dark ? 'rgba(16,185,129,0.7)' : 'rgba(16,185,129,0.8)');
+            g.append('text')
+                .attr('x', x + nodeW - 24).attr('y', midY + 1)
+                .attr('text-anchor', 'middle').attr('dy', '0.35em')
+                .attr('fill', '#fff').attr('font-size', '13px').attr('font-weight', '900')
+                .text(n.count);
+
+            // Name
+            g.append('text')
+                .attr('x', x + 10).attr('y', midY + 1)
+                .attr('dy', '0.35em')
+                .attr('fill', dark ? '#6ee7b7' : '#065f46')
+                .attr('font-size', '11px').attr('font-weight', '700')
+                .text(shortLabel(n.name, 22));
+
+            // Hover → list every student who came here from this college
+            g.append('rect').attr('x', x).attr('y', y).attr('width', nodeW).attr('height', nodeH)
+                .attr('fill', 'transparent').style('cursor', 'pointer')
+                .on('mouseover', function(event) { tipShow(rightTooltip(n), event); })
+                .on('mousemove', tipMove)
+                .on('mouseout', tipHide);
+        });
+
+        // ── Center node (selected college) ──
+        const centerGroup = svg.append('g');
+        // Glow
+        centerGroup.append('rect')
+            .attr('x', centerX - 4).attr('y', centerY - 4)
+            .attr('width', centerW + 8).attr('height', centerH + 8)
+            .attr('rx', 20).attr('ry', 20)
+            .attr('fill', dark ? 'rgba(59,130,246,0.15)' : 'rgba(59,130,246,0.08)');
+        // Main rect
+        centerGroup.append('rect')
+            .attr('x', centerX).attr('y', centerY)
+            .attr('width', centerW).attr('height', centerH)
+            .attr('class', 'wf-center-rect')
+            .attr('fill', dark ? 'rgba(30,58,138,0.7)' : 'rgba(219,234,254,0.9)')
+            .attr('stroke', dark ? 'rgba(96,165,250,0.5)' : 'rgba(96,165,250,0.6)')
+            .attr('stroke-width', 2)
+            .attr('filter', 'url(#cardShadow)');
+        // Label
+        centerGroup.append('text')
+            .attr('x', centerMidX).attr('y', centerMidY + 1)
+            .attr('text-anchor', 'middle').attr('dy', '0.35em')
+            .attr('fill', dark ? '#93c5fd' : '#1e40af')
+            .attr('font-size', '14px').attr('font-weight', '900')
+            .text(shortLabel(selectedCollege, 30));
+
+        // Hover on the center → aggregate summary of this college's flows
+        const totalLeft = leftNodes.reduce((s, n) => s + n.count, 0);
+        const totalRight = rightNodes.reduce((s, n) => s + n.count, 0);
+        const topLeft = leftNodes.slice(0, 6).map(n => `<div class="wf-tip-sumrow"><span class="wf-tip-appl">${n.count}</span><span class="wf-tip-course">left to ${shortLabel(n.name, 34)}</span></div>`).join('');
+        const topRight = rightNodes.slice(0, 6).map(n => `<div class="wf-tip-sumrow"><span class="wf-tip-appl">${n.count}</span><span class="wf-tip-course">came from ${shortLabel(n.name, 34)}</span></div>`).join('');
+        centerGroup.append('rect')
+            .attr('x', centerX).attr('y', centerY).attr('width', centerW).attr('height', centerH)
+            .attr('fill', 'transparent').style('cursor', 'pointer')
+            .on('mouseover', function(event) {
+                tipShow(`
+                    <div style="font-weight:900">${shortLabel(selectedCollege, 60)}</div>
+                    <div class="wf-tip-sub">${totalLeft} student${totalLeft !== 1 ? 's' : ''} left · ${totalRight} student${totalRight !== 1 ? 's' : ''} arrived</div>
+                    <div class="wf-tip-caption">Top left-to destinations</div>
+                    <div class="wf-tip-list">${topLeft || '<div class="wf-tip-more">None</div>'}</div>
+                    <div class="wf-tip-caption" style="margin-top:8px">Top came-from sources</div>
+                    <div class="wf-tip-list">${topRight || '<div class="wf-tip-more">None</div>'}</div>`, event);
+            })
+            .on('mousemove', tipMove)
+            .on('mouseout', tipHide);
+
+        // ── Column headers ──
+        svg.append('text')
+            .attr('x', leftColX + nodeW / 2).attr('y', leftStartY - 16)
+            .attr('text-anchor', 'middle')
+            .attr('fill', dark ? 'rgba(248,113,113,0.6)' : 'rgba(220,38,38,0.5)')
+            .attr('font-size', '11px').attr('font-weight', '800').attr('letter-spacing', '1px')
+            .text('← STUDENTS LEFT TO');
+        svg.append('text')
+            .attr('x', rightColX + nodeW / 2).attr('y', rightStartY - 16)
+            .attr('text-anchor', 'middle')
+            .attr('fill', dark ? 'rgba(52,211,153,0.6)' : 'rgba(5,150,105,0.5)')
+            .attr('font-size', '11px').attr('font-weight', '800').attr('letter-spacing', '1px')
+            .text('STUDENTS CAME FROM →');
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    // CROSS-COLLEGE / CROSS-COURSE COMPARISONS
+    // Self-contained widgets (Head-to-Head, Heatmap, Volatility, drill-down
+    // modal). Fully independent of the Migration Tracker above.
+    // ══════════════════════════════════════════════════════════════════
+    let cmpChart = null, volChart = null;
+
+    function esc(s) {
+        return String(s == null ? '' : s).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+    }
+
+    function fillNativeSelect(id, items, defaultText) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.innerHTML = `<option value="">${defaultText}</option>` +
+            items.map(i => `<option value="${esc(i)}">${esc(shortLabel(i, 60))}</option>`).join('');
+    }
+
+    async function initCrossComparisons() {
+        try {
+            const [colRes, crsRes] = await Promise.all([fetch('/api/colleges'), fetch('/api/courses')]);
+            const colleges = await colRes.json();
+            const courses = await crsRes.json();
+            fillNativeSelect('cmpCollegeA', colleges, 'Choose College...');
+            fillNativeSelect('cmpCollegeB', colleges, 'Choose College...');
+            fillNativeSelect('cmpCourse', courses, 'All Courses');
+            fillNativeSelect('volCourse', courses, 'CS - Computer Science & Engineering');
+
+            document.getElementById('cmpRunBtn').addEventListener('click', runHeadToHead);
+            document.getElementById('cmpCourse').addEventListener('change', () => { if (cmpChart) runHeadToHead(); });
+            document.getElementById('hmPhase').addEventListener('change', loadCutoffHeatmap);
+            document.getElementById('volCourse').addEventListener('change', loadVolatility);
+            document.getElementById('volPhase').addEventListener('change', loadVolatility);
+            document.getElementById('globalYear').addEventListener('change', () => {
+                loadCutoffHeatmap(); loadVolatility(); if (cmpChart) runHeadToHead();
+            });
+            document.getElementById('drillClose').addEventListener('click', closeDrillModal);
+            document.getElementById('drillModal').addEventListener('click', e => { if (e.target.id === 'drillModal') closeDrillModal(); });
+            document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDrillModal(); });
+
+            loadCutoffHeatmap();
+            loadVolatility();
+        } catch (e) { console.error('Cross-compare init error:', e); }
+    }
+
+    // ── ⚔️ Head-to-Head College Comparator ──
+    async function runHeadToHead() {
+        const A = document.getElementById('cmpCollegeA').value;
+        const B = document.getElementById('cmpCollegeB').value;
+        const course = document.getElementById('cmpCourse').value;
+        const wrap = document.getElementById('cmpWrap');
+        const noData = document.getElementById('cmpNoData');
+        const tbody = document.getElementById('cmpTableBody');
+        const summary = document.getElementById('cmpSummary');
+        if (!A || !B) { wrap.classList.add('hidden'); noData.classList.remove('hidden'); summary.textContent = ''; return; }
+        noData.classList.add('hidden');
+        wrap.classList.remove('hidden');
+        summary.textContent = '⏳ loading…';
+        try {
+            const [ra, rb] = await Promise.all([
+                fetch(`/api/stats/college-cutoffs?year=${getYear()}&college=${encodeURIComponent(A)}`).then(r => r.json()),
+                fetch(`/api/stats/college-cutoffs?year=${getYear()}&college=${encodeURIComponent(B)}`).then(r => r.json())
+            ]);
+            const mapA = Object.fromEntries((ra || []).map(x => [x.course, x]));
+            const mapB = Object.fromEntries((rb || []).map(x => [x.course, x]));
+            const allCourses = [...new Set([...Object.keys(mapA), ...Object.keys(mapB)])]
+                .filter(c => !course || c === course)
+                .sort((a, b) => a.localeCompare(b));
+            if (!allCourses.length) {
+                tbody.innerHTML = '<tr><td colspan="7" class="py-6 text-center text-slate-400">No common courses for this selection.</td></tr>';
+                summary.textContent = '';
+                return;
+            }
+
+            let aWins = 0, bWins = 0, ties = 0;
+            const rows = allCourses.map(c => {
+                const a = mapA[c], b = mapB[c];
+                const aLast = a ? a.last : null, bLast = b ? b.last : null;
+                const delta = (aLast && bLast) ? bLast - aLast : null;
+                let edge = '—';
+                if (aLast && bLast) {
+                    if (aLast < bLast) { edge = 'A'; aWins++; }
+                    else if (bLast < aLast) { edge = 'B'; bWins++; }
+                    else { edge = 'Tie'; ties++; }
+                }
+                return { c, a, b, aLast, bLast, delta, edge };
+            });
+
+            tbody.innerHTML = rows.map(r => `
+                <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/50">
+                    <td class="py-2 px-3 font-bold text-slate-700 dark:text-slate-200">${esc(shortLabel(r.c, 34))}</td>
+                    <td class="py-2 px-3 text-indigo-600 dark:text-indigo-400 font-black">${r.a?.lowest?.toLocaleString() ?? '—'}</td>
+                    <td class="py-2 px-3 text-indigo-400 dark:text-indigo-300">${r.aLast?.toLocaleString() ?? '—'}</td>
+                    <td class="py-2 px-3 text-teal-600 dark:text-teal-400 font-black">${r.b?.lowest?.toLocaleString() ?? '—'}</td>
+                    <td class="py-2 px-3 text-teal-400 dark:text-teal-300">${r.bLast?.toLocaleString() ?? '—'}</td>
+                    <td class="py-2 px-3 font-bold ${r.delta === null ? 'text-slate-400' : r.delta < 0 ? 'text-emerald-600 dark:text-emerald-400' : r.delta > 0 ? 'text-red-500 dark:text-red-400' : 'text-slate-400'}">${r.delta === null ? '—' : (r.delta > 0 ? '+' : '') + r.delta.toLocaleString()}</td>
+                    <td class="py-2 px-3">${r.edge === 'A' ? '<span class="text-indigo-600 dark:text-indigo-400 font-black">A better</span>' : r.edge === 'B' ? '<span class="text-teal-600 dark:text-teal-400 font-black">B better</span>' : r.edge === 'Tie' ? '<span class="text-slate-400">Tie</span>' : '—'}</td>
+                </tr>`).join('');
+
+            summary.innerHTML = `<span class="text-indigo-600 dark:text-indigo-400">A better on ${aWins}</span> · <span class="text-teal-600 dark:text-teal-400">B better on ${bWins}</span> · <span class="text-slate-400">${ties} tie${ties !== 1 ? 's' : ''}</span>`;
+
+            const labels = rows.map(r => shortLabel(r.c, 18));
+            const dataA = rows.map(r => r.aLast ?? null);
+            const dataB = rows.map(r => r.bLast ?? null);
+            const cc = chartColors();
+            if (cmpChart) cmpChart.destroy();
+            cmpChart = new Chart(document.getElementById('cmpChart'), {
+                type: 'bar',
+                data: { labels, datasets: [
+                    { label: 'A last cutoff', data: dataA, backgroundColor: 'rgba(99,102,241,0.75)', borderRadius: 3, barThickness: 9 },
+                    { label: 'B last cutoff', data: dataB, backgroundColor: 'rgba(20,184,166,0.75)', borderRadius: 3, barThickness: 9 }
+                ]},
+                options: {
+                    indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'top', labels: { color: cc.tickColor, font: { size: 11, weight: 'bold' } } },
+                        tooltip: { backgroundColor: cc.tooltipBg, titleColor: cc.tooltipText, bodyColor: cc.tooltipText, callbacks: { label: ctx => ` ${ctx.dataset.label}: Rank ${ctx.parsed.x?.toLocaleString() ?? '—'}` } }
+                    },
+                    scales: {
+                        x: { beginAtZero: true, ticks: { color: cc.tickColor }, grid: { color: cc.gridColor } },
+                        y: { ticks: { color: cc.tickColor, font: { size: 9 } }, grid: { display: false } }
+                    }
+                }
+            });
+        } catch (e) { console.error('Head-to-head error:', e); summary.textContent = ''; }
+    }
+
+    // ── 🔥 College × Course Cutoff Heatmap ──
+    async function loadCutoffHeatmap() {
+        const wrap = document.getElementById('hmWrap');
+        const loading = document.getElementById('hmLoading');
+        const head = document.getElementById('hmHead');
+        const body = document.getElementById('hmBody');
+        if (!wrap) return;
+        loading.classList.remove('hidden');
+        wrap.classList.add('hidden');
+        try {
+            const phase = document.getElementById('hmPhase').value;
+            const r = await fetch(`/api/stats/cutoff-matrix?year=${getYear()}&phase=${phase}&seat=SM`);
+            const data = await r.json();
+            if (!Array.isArray(data) || !data.length) {
+                loading.textContent = 'No SM cutoff data for this year/phase.';
+                return;
+            }
+
+            const byCol = {};
+            data.forEach(x => { (byCol[x.college] = byCol[x.college] || []).push(x); });
+            const colOrder = Object.entries(byCol)
+                .sort((a, b) => (b[1].reduce((s, x) => s + x.seats, 0)) - (a[1].reduce((s, x) => s + x.seats, 0)))
+                .slice(0, 30).map(([name]) => name);
+            const courseSeats = {};
+            data.forEach(x => { courseSeats[x.course] = (courseSeats[x.course] || 0) + x.seats; });
+            const courseOrder = Object.keys(courseSeats).sort((a, b) => courseSeats[b] - courseSeats[a]).slice(0, 24);
+            const cell = {};
+            data.forEach(x => { cell[x.college + '|' + x.course] = x; });
+
+            const values = colOrder.flatMap(c => courseOrder.map(co => cell[c + '|' + co]?.lowest)).filter(v => v && v > 0);
+            const vMin = Math.min(...values), vMax = Math.max(...values);
+            function colorFor(v) {
+                const t = vMax > vMin ? (v - vMin) / (vMax - vMin) : 0.5;
+                const c1 = [16, 185, 129], c2 = [244, 63, 94];
+                const rgb = c1.map((a, i) => Math.round(a + (c2[i] - a) * t));
+                return `rgb(${rgb.join(',')})`;
+            }
+
+            head.innerHTML = `<tr><th class="sticky left-0 bg-slate-100 dark:bg-slate-700 z-20 py-2 px-3 text-left min-w-[190px]">College</th>` +
+                courseOrder.map(co => `<th class="py-2 px-1.5 min-w-[92px] whitespace-nowrap" title="${esc(co)}">${esc(shortLabel(co, 14))}</th>`).join('') + '</tr>';
+
+            body.innerHTML = colOrder.map(col => {
+                const totalSeats = byCol[col].reduce((s, x) => s + x.seats, 0);
+                return `<tr>
+                    <td class="sticky left-0 bg-white dark:bg-slate-800 z-10 py-1.5 px-3 text-left font-bold text-[10.5px] whitespace-nowrap">${esc(shortLabel(col, 34))} <span class="text-slate-400 font-semibold">(${totalSeats})</span></td>
+                    ${courseOrder.map(co => {
+                        const c = cell[col + '|' + co];
+                        if (!c) return '<td class="py-1.5 px-1.5 bg-slate-50 dark:bg-slate-900/40"></td>';
+                        const bg = colorFor(c.lowest);
+                        const fg = c.lowest >= vMin + (vMax - vMin) * 0.55 ? '#ffffff' : '#083344';
+                        return `<td class="py-1.5 px-1.5 cursor-pointer" style="background:${bg};color:${fg}"
+                            data-college="${esc(col)}" data-course="${esc(co)}"
+                            title="${esc(shortLabel(col, 40))} · ${esc(shortLabel(co, 40))}\nOpening ${c.lowest} · Closing ${c.last} · ${c.seats} seats">${c.lowest}</td>`;
+                    }).join('')}
+                </tr>`;
+            }).join('');
+
+            body.querySelectorAll('td[data-college]').forEach(td => {
+                td.addEventListener('click', () => openDrillModal(td.dataset.college, td.dataset.course));
+            });
+
+            loading.classList.add('hidden');
+            wrap.classList.remove('hidden');
+        } catch (e) {
+            console.error('Heatmap error:', e);
+            loading.textContent = 'Failed to load heatmap.';
+        }
+    }
+
+    // ── 📈 Opening vs Closing Rank (Volatility) ──
+    async function loadVolatility() {
+        const course = document.getElementById('volCourse').value;
+        if (!course) return;
+        try {
+            const phase = document.getElementById('volPhase').value;
+            const r = await fetch(`/api/stats/cutoff-matrix?year=${getYear()}&phase=${phase}&seat=SM`);
+            const data = await r.json();
+            const rows = (data || []).filter(x => x.course === course && x.lowest > 0);
+            rows.sort((a, b) => a.lowest - b.lowest);
+            const cc = chartColors();
+            if (volChart) volChart.destroy();
+            volChart = new Chart(document.getElementById('volChart'), {
+                type: 'scatter',
+                data: { datasets: [{
+                    label: course,
+                    data: rows.map(x => ({ x: x.lowest, y: x.last, r: Math.max(5, Math.sqrt(x.seats) * 1.1) })),
+                    backgroundColor: 'rgba(139,92,246,0.5)', borderColor: 'rgba(139,92,246,0.9)', borderWidth: 1,
+                    // rows is sorted identically to the data array, so ctx.dataIndex aligns with rows[ctx.dataIndex]
+                    pointHitRadius: 8
+                }]},
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: cc.tooltipBg, titleColor: cc.tooltipText, bodyColor: cc.tooltipText,
+                            callbacks: {
+                                title: items => items[0] ? shortLabel(rows[items[0].dataIndex].college, 44) : '',
+                                label: ctx => ` ${shortLabel(course, 26)}: Opening ${ctx.parsed.x?.toLocaleString()} · Closing ${ctx.parsed.y?.toLocaleString()} · ${rows[ctx.dataIndex].seats} seats`
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { title: { display: true, text: 'Lowest / Opening Rank (SM)', color: cc.tickColor }, ticks: { color: cc.tickColor }, grid: { color: cc.gridColor } },
+                        y: { title: { display: true, text: 'Last / Closing Rank (SM)', color: cc.tickColor }, ticks: { color: cc.tickColor }, grid: { color: cc.gridColor } }
+                    }
+                }
+            });
+        } catch (e) { console.error('Volatility error:', e); }
+    }
+
+    // ── Drill-down modal (students behind a heatmap cell) ──
+    async function openDrillModal(college, course) {
+        const modal = document.getElementById('drillModal');
+        const title = document.getElementById('drillTitle');
+        const tbody = document.getElementById('drillBody');
+        const foot = document.getElementById('drillFoot');
+        title.textContent = `${shortLabel(college, 44)} · ${shortLabel(course, 40)}`;
+        tbody.innerHTML = '<tr><td colspan="5" class="py-6 text-center text-slate-400">Loading…</td></tr>';
+        foot.textContent = '';
+        modal.classList.remove('hidden');
+        try {
+            const phase = document.getElementById('hmPhase').value;
+            const r = await fetch(`/data?year=${getYear()}&phase=${phase}&college=${encodeURIComponent(college)}&course=${encodeURIComponent(course)}&length=1000&draw=1`);
+            const d = await r.json();
+            const rows = d.data || [];
+            tbody.innerHTML = rows.length
+                ? rows.slice(0, 500).map(x => `
+                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/50">
+                        <td class="py-2 px-3 text-blue-600 dark:text-blue-400 font-bold">${esc(x.register_number ?? '—')}</td>
+                        <td class="py-2 px-3 font-black">${esc(x.rank ?? '—')}</td>
+                        <td class="py-2 px-3">${esc(x.candidate_category ?? '—')}</td>
+                        <td class="py-2 px-3">${esc(x.seat_type ?? '—')}</td>
+                        <td class="py-2 px-3 text-slate-500 dark:text-slate-400">${esc(shortLabel(x.course_name, 30))}</td>
+                    </tr>`).join('')
+                : '<tr><td colspan="5" class="py-6 text-center text-slate-400">No students found for this branch.</td></tr>';
+            const shown = Math.min(rows.length, 500);
+            foot.textContent = `${shown} of ${rows.length} student${rows.length !== 1 ? 's' : ''} shown · ${getYear()} · ${phase}`;
+        } catch (e) {
+            console.error('Drill error:', e);
+            tbody.innerHTML = '<tr><td colspan="5" class="py-6 text-center text-red-400">Failed to load.</td></tr>';
+        }
+    }
+
+    function closeDrillModal() {
+        const modal = document.getElementById('drillModal');
+        if (modal) modal.classList.add('hidden');
+    }
+
+    // ── Load All ─────────────────────────────────────────────────────
+    async function loadAll() {
+        await Promise.all([loadKPI(), loadCollegeChart(), loadBandChart(), loadPhaseChart(), loadCategoryTable(), loadBranchTable()]);
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        initDarkMode();
+        await initMigration(); // Load this first (populates college selectors)
+        await loadAll();
+        sendTelemetry('Page Load', '', '');
+
+        // Event listeners
+        document.getElementById('darkToggle').addEventListener('click', toggleDarkMode);
+        document.getElementById('refreshBtn').addEventListener('click', loadAll);
+        document.getElementById('globalYear').addEventListener('change', function() {
+            loadAll();
+            sendTelemetry('Stats Filter', JSON.stringify({ year: getYear() }), 'global_year');
+        });
+        document.getElementById('collegeChartCourse').addEventListener('change', loadCollegeChart);
+        document.getElementById('cutoffLoadBtn').addEventListener('click', function() {
+            loadCutoffCharts();
+            sendTelemetry('Stats Filter', JSON.stringify({ college: document.getElementById('cutoffCollegeSelect').value }), 'cutoff_load');
+        });
+        document.getElementById('bandCollegeSelect').addEventListener('change', loadBandChart);
+        document.getElementById('phaseCollegeSelect').addEventListener('change', loadPhaseChart);
+        document.getElementById('catCollegeSelect').addEventListener('change', loadCategoryTable);
+        document.getElementById('branchCollegeSelect').addEventListener('change', loadBranchTable);
+    });
+
+    // Cross-comparison widgets load independently (Migration Tracker untouched)
+    document.addEventListener('DOMContentLoaded', () => { initCrossComparisons(); });
+</script>
+</body>
+</html>

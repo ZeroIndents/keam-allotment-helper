@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KEAM Management Workspace</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+</head>
+<body class="bg-body-tertiary">
+
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm py-3 mb-4">
+        <div class="container">
+            <a class="navbar-brand font-weight-bold" href="/admin"><i class="bi bi-sliders2-vertical me-2 text-warning"></i>Admin Management Node</a>
+            <div class="d-flex gap-2 align-items-center">
+                <a href="/" class="btn btn-sm btn-outline-light rounded-pill px-3">View Portal</a>
+                <form action="/admin/logout" method="POST" class="m-0">
+                    <input type="hidden" name="_csrf" value="{{ csrf_token }}">
+                    <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3">Logout</button>
+                </form>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mb-5" style="max-width: 1000px;">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, msg in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ msg }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="card shadow-sm border-0 rounded-3 mb-4">
+            <div class="card-header bg-primary text-white p-3"><h5 class="mb-0 fs-6"><i class="bi bi-cloud-arrow-up-fill me-2"></i>Allotment Ingestion Module</h5></div>
+            <div class="card-body p-4 bg-body">
+                <form action="/admin/upload" method="POST" enctype="multipart/form-data" id="ingestionForm">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold">Target Year</label>
+                            <select class="form-select" name="year" required><option value="2026">2026</option><option value="2025">2025</option><option value="2024" selected>2024</option></select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold">Allotment Round Phase</label>
+                            <select class="form-select" name="phase" required><option value="Phase1">Phase 1</option><option value="Phase2">Phase 2</option><option value="Phase3" selected>Phase 3</option></select>
+                        </div>
+                        <div class="col-md-6"><label class="form-label small fw-bold">Official Document (.pdf)</label><input class="form-control" type="file" name="pdf_file" accept=".pdf" required></div>
+                    </div>
+                    <hr class="my-4 text-muted">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-muted small">Transforms text boundaries directly to target schema database rows.</span>
+                        <button type="submit" class="btn btn-primary px-4 font-weight-bold" id="submitBtn">Execute Parse Sequence</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="card shadow-sm border-0 rounded-3">
+            <div class="card-header bg-dark text-white p-3 d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 fs-6 fw-bold"><i class="bi bi-eye-fill me-2 text-info"></i>Live User Access Telemetry Pipeline</h5>
+                <button id="refreshLogsBtn" class="btn btn-sm btn-outline-info rounded-pill px-3">Refresh</button>
+            </div>
+            <div class="card-body p-0 bg-body">
+                <div class="table-responsive" style="max-height: 480px; overflow-y: auto;">
+                    <table class="table table-sm table-hover table-striped mb-0 text-start align-middle" style="font-size: 13px;">
+                        <thead class="table-secondary sticky-top">
+                            <tr>
+                                <th class="ps-3 py-2">Timestamp</th><th>Visitor IP</th><th>Page</th><th>Device</th><th>Action</th><th>Search Targets</th>
+                            </tr>
+                        </thead>
+                        <tbody id="analyticsLogBody">
+                            <tr><td colspan="6" class="text-center text-muted p-4">Loading access records...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('html').attr('data-bs-theme', localStorage.getItem('keam_ui_theme') || 'light');
+            $('#ingestionForm').on('submit', function() { $('#submitBtn').prop('disabled', true).text('Processing PDF lines...'); });
+
+            // Escape every value rendered from API data (stored-XSS protection).
+            function escText(value) {
+                return $('<div>').text(value == null ? '' : String(value)).html();
+            }
+
+            function loadTelemetryRecords() {
+                $.getJSON('/admin/analytics/data', function(data) {
+                    var tbody = $('#analyticsLogBody').empty();
+                    if(data.length === 0) { tbody.html('<tr><td colspan="6" class="text-center p-3">No logs found.</td></tr>'); return; }
+                    $.each(data, function(i, log) {
+                        var dBadge = log.device_type === 'Mobile' ? 'bg-danger-subtle text-danger' : 'bg-primary-subtle text-primary';
+                        tbody.append(`<tr><td class="ps-3 font-monospace">${escText(log.timestamp)}</td><td><strong>${escText(log.ip_address)}</strong></td><td><span class="badge bg-light text-dark border">${escText(log.page || '—')}</span></td><td><span class="badge ${dBadge}">${escText(log.device_type)}</span></td><td><span class="badge bg-secondary">${escText(log.action_type)}</span></td><td><code>${escText(log.search_query || log.clicked_element)}</code></td></tr>`);
+                    });
+                });
+            }
+            $('#refreshLogsBtn').on('click', loadTelemetryRecords);
+            loadTelemetryRecords();
+            setInterval(loadTelemetryRecords, 30000); // auto-refresh the live feed
+        });
+    </script>
+</body>
+</html>

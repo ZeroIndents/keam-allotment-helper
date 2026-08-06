@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+<head>
+    <title>Advanced Exam Document Toolkit | KEAM, JEE, NEET</title>
+    <meta name="description" content="Interactive browser-side tools to crop, pan, resize, and compress passport photos, signatures, and certificates for engineering and medical admissions.">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
+    
+    <style>
+        .text-gradient { background: linear-gradient(90deg, #0dcaf0, #0d6efd); -webkit-background-clip: text; -webkit-text-fill-color: transparent; display: inline-block; }
+        .nav-pills .nav-link.active { background: linear-gradient(90deg, #0d6efd, #0dcaf0); font-weight: bold; color: white !important; }
+        
+        /* Cropper Workspace Constraints */
+        .crop-workspace { max-height: 400px; width: 100%; border-radius: 8px; overflow: hidden; display: none; background-color: var(--bs-secondary-bg); }
+        .crop-workspace img { display: block; max-width: 100%; }
+        
+        .config-block { background-color: var(--bs-tertiary-bg); border: 1px solid var(--bs-border-color); border-radius: 8px; padding: 15px; }
+    </style>
+</head>
+<body class="bg-body-tertiary pb-5">
+
+    <div class="container mt-4" style="max-width: 850px;">
+        <div class="mb-4">
+            <a href="/" class="btn btn-sm btn-outline-secondary rounded-pill mb-3"><i class="bi bi-arrow-left me-1"></i> Back to Allotment Helper</a>
+            <h2 class="fw-bold mb-1"><i class="bi bi-crop me-2 text-info"></i><span class="text-gradient">Interactive Document Toolkit</span></h2>
+            <p class="text-secondary">Crop, pan, and precisely compress your admission files offline in your browser.</p>
+        </div>
+
+        <ul class="nav nav-pills nav-fill flex-column flex-md-row gap-2 p-1 bg-body shadow-sm rounded-4 mb-4" id="toolkitTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link text-body-emphasis active rounded-3 py-2" data-bs-toggle="tab" data-bs-target="#photoPanel" type="button"><i class="bi bi-person-bounding-box me-2"></i>Photo</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link text-body-emphasis rounded-3 py-2" data-bs-toggle="tab" data-bs-target="#sigPanel" type="button"><i class="bi bi-pen me-2"></i>Signature</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link text-body-emphasis rounded-3 py-2" data-bs-toggle="tab" data-bs-target="#imgPdfPanel" type="button"><i class="bi bi-file-image me-2"></i>Img to PDF</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link text-body-emphasis rounded-3 py-2" data-bs-toggle="tab" data-bs-target="#pdfCompressPanel" type="button"><i class="bi bi-file-earmark-zip me-2"></i>Compress PDF</button>
+            </li>
+        </ul>
+
+        <div class="tab-content" id="toolkitTabsContent">
+            
+            <div class="tab-pane fade show active" id="photoPanel" role="tabpanel">
+                <div class="card shadow-sm border-0 rounded-4 p-3 p-md-4">
+                    <h5 class="fw-bold text-body-emphasis mb-3"><i class="bi bi-camera me-2 text-primary"></i>Passport Photo Resizer</h5>
+                    
+                    <div class="config-block mb-4">
+                        <label class="form-label fw-bold small text-muted text-uppercase mb-1">Select Exam Preset</label>
+                        <select id="photoPreset" class="form-select bg-body-secondary fw-bold mb-3 border-secondary-subtle">
+                            <option value="keam">KEAM (150x200px | 15-100KB)</option>
+                            <option value="jee">JEE Main (275x354px | 10-200KB)</option>
+                            <option value="neet">NEET UG (275x354px | 10-200KB)</option>
+                            <option value="custom">Custom Configuration...</option>
+                        </select>
+
+                        <div class="row g-3">
+                            <div class="col-6 col-md-3">
+                                <label class="form-label fw-bold small text-secondary mb-1">Width (px)</label>
+                                <input type="number" id="photoW" class="form-control fw-bold photo-config bg-body-tertiary" value="150" readonly>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <label class="form-label fw-bold small text-secondary mb-1">Height (px)</label>
+                                <input type="number" id="photoH" class="form-control fw-bold photo-config bg-body-tertiary" value="200" readonly>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <label class="form-label fw-bold small text-secondary mb-1">Min (KB)</label>
+                                <input type="number" id="photoMinKb" class="form-control photo-config bg-body-tertiary" value="15" readonly>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <label class="form-label fw-bold small text-secondary mb-1">Max (KB)</label>
+                                <input type="number" id="photoMaxKb" class="form-control photo-config bg-body-tertiary" value="100" readonly>
+                            </div>
+                        </div>
+                    </div>
+
+                    <label class="form-label fw-bold">Select Image to Crop</label>
+                    <input class="form-control form-control-lg mb-3" type="file" id="photoFile" accept="image/*">
+
+                    <div class="crop-workspace" id="photoWorkspace">
+                        <img id="photoTarget" src="">
+                    </div>
+
+                    <div id="photoActionArea" class="mt-3 text-center" style="display: none;">
+                        <button id="processPhotoBtn" class="btn btn-success btn-lg w-100 rounded-pill shadow-sm fw-bold mb-3">
+                            <i class="bi bi-scissors me-2"></i>Crop & Compress
+                        </button>
+                    </div>
+
+                    <div id="photoResult" class="alert border border-success bg-success-subtle mt-3 text-center" style="display: none;">
+                        <div id="photoStatus" class="small mb-2 text-body-emphasis"></div>
+                        <button id="downloadPhotoBtn" class="btn btn-primary rounded-pill fw-bold px-4"><i class="bi bi-download me-2"></i>Download Photo</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="sigPanel" role="tabpanel">
+                <div class="card shadow-sm border-0 rounded-4 p-3 p-md-4">
+                    <h5 class="fw-bold text-body-emphasis mb-3"><i class="bi bi-vector-pen me-2 text-info"></i>Signature Resizer</h5>
+                    
+                    <div class="config-block mb-4">
+                        <label class="form-label fw-bold small text-muted text-uppercase mb-1">Select Exam Preset</label>
+                        <select id="sigPreset" class="form-select bg-body-secondary fw-bold mb-3 border-secondary-subtle">
+                            <option value="keam">KEAM (150x100px | 10-100KB)</option>
+                            <option value="jee">JEE Main (275x118px | 4-30KB)</option>
+                            <option value="neet">NEET UG (275x118px | 4-30KB)</option>
+                            <option value="custom">Custom Configuration...</option>
+                        </select>
+
+                        <div class="row g-3">
+                            <div class="col-6 col-md-3">
+                                <label class="form-label fw-bold small text-secondary mb-1">Width (px)</label>
+                                <input type="number" id="sigW" class="form-control fw-bold sig-config bg-body-tertiary" value="150" readonly>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <label class="form-label fw-bold small text-secondary mb-1">Height (px)</label>
+                                <input type="number" id="sigH" class="form-control fw-bold sig-config bg-body-tertiary" value="100" readonly>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <label class="form-label fw-bold small text-secondary mb-1">Min (KB)</label>
+                                <input type="number" id="sigMinKb" class="form-control sig-config bg-body-tertiary" value="10" readonly>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <label class="form-label fw-bold small text-secondary mb-1">Max (KB)</label>
+                                <input type="number" id="sigMaxKb" class="form-control sig-config bg-body-tertiary" value="100" readonly>
+                            </div>
+                        </div>
+                    </div>
+
+                    <label class="form-label fw-bold">Select Signature Image</label>
+                    <input class="form-control form-control-lg mb-3" type="file" id="sigFile" accept="image/*">
+
+                    <div class="crop-workspace" id="sigWorkspace">
+                        <img id="sigTarget" src="">
+                    </div>
+
+                    <div id="sigActionArea" class="mt-3 text-center" style="display: none;">
+                        <button id="processSigBtn" class="btn btn-success btn-lg w-100 rounded-pill shadow-sm fw-bold mb-3">
+                            <i class="bi bi-scissors me-2"></i>Crop & Compress
+                        </button>
+                    </div>
+
+                    <div id="sigResult" class="alert border border-success bg-success-subtle mt-3 text-center" style="display: none;">
+                        <div id="sigStatus" class="small mb-2 text-body-emphasis"></div>
+                        <button id="downloadSigBtn" class="btn btn-info text-white rounded-pill fw-bold px-4"><i class="bi bi-download me-2"></i>Download Signature</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="imgPdfPanel" role="tabpanel">
+                <div class="card shadow-sm border-0 rounded-4 p-3 p-md-4">
+                    <h5 class="fw-bold text-body-emphasis mb-3"><i class="bi bi-file-earmark-pdf text-danger me-2"></i>Image-to-PDF Compiler</h5>
+                    <p class="text-secondary small">Crop your physical certificate scan, and compile it to an A4 PDF.</p>
+                    
+                    <div class="config-block mb-4">
+                        <label class="form-label fw-bold small text-muted text-uppercase mb-1">Select Exam Preset</label>
+                        <select id="imgPdfPreset" class="form-select bg-body-secondary fw-bold mb-3 border-secondary-subtle">
+                            <option value="keam">KEAM Limits (Max 500KB)</option>
+                            <option value="jee">JEE/NEET Limits (Max 300KB)</option>
+                            <option value="custom">Custom Configuration...</option>
+                        </select>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small text-secondary mb-1">Target Max Size (KB)</label>
+                                <input type="number" id="imgPdfMaxKb" class="form-control fw-bold img-pdf-config bg-body-tertiary" value="500" readonly>
+                            </div>
+                        </div>
+                    </div>
+
+                    <label class="form-label fw-bold">Select Certificate Scan (Image)</label>
+                    <input class="form-control form-control-lg mb-3" type="file" id="imgPdfFile" accept="image/*">
+
+                    <div class="crop-workspace" id="imgPdfWorkspace">
+                        <img id="imgPdfTarget" src="">
+                    </div>
+
+                    <div id="imgPdfActionArea" class="mt-3 text-center" style="display: none;">
+                        <button id="processImgPdfBtn" class="btn btn-danger btn-lg w-100 rounded-pill shadow-sm fw-bold mb-3">
+                            <i class="bi bi-filetype-pdf me-2"></i>Crop & Compile Document
+                        </button>
+                    </div>
+
+                    <div id="imgPdfResult" class="alert border border-success bg-success-subtle mt-3 text-center" style="display: none;">
+                        <div id="imgPdfStatus" class="small mb-2 text-body-emphasis"><i class="bi bi-check-circle me-1"></i> PDF Successfully Compiled!</div>
+                        <button id="downloadImgPdfBtn" class="btn btn-success rounded-pill fw-bold px-4"><i class="bi bi-download me-2"></i>Download PDF</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="pdfCompressPanel" role="tabpanel">
+                <div class="card shadow-sm border-0 rounded-4 p-3 p-md-4">
+                    <h5 class="fw-bold text-body-emphasis mb-3"><i class="bi bi-file-earmark-zip me-2 text-warning"></i>Existing PDF Resizer</h5>
+                    <p class="text-secondary small">Reduces the file size of an existing PDF document by compressing its pages.</p>
+                    
+                    <div class="config-block mb-4">
+                        <label class="form-label fw-bold small text-muted text-uppercase mb-1">Select Exam Preset</label>
+                        <select id="pdfCompressPreset" class="form-select bg-body-secondary fw-bold mb-3 border-secondary-subtle">
+                            <option value="keam">KEAM Limits (Max 500KB)</option>
+                            <option value="jee">JEE/NEET Limits (Max 300KB)</option>
+                            <option value="custom">Custom Configuration...</option>
+                        </select>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small text-secondary mb-1">Target Max Size (KB)</label>
+                                <input type="number" id="pdfCompressMaxKb" class="form-control fw-bold pdf-compress-config bg-body-tertiary" value="500" readonly>
+                            </div>
+                        </div>
+                    </div>
+
+                    <label class="form-label fw-bold">Select Existing PDF</label>
+                    <input class="form-control form-control-lg mb-3" type="file" id="pdfCompressFile" accept="application/pdf">
+
+                    <div id="pdfCompressActionArea" class="mt-3 text-center" style="display: none;">
+                        <button id="processPdfCompressBtn" class="btn btn-warning btn-lg w-100 rounded-pill shadow-sm fw-bold text-dark mb-3">
+                            <i class="bi bi-file-earmark-zip me-2"></i>Compress PDF
+                        </button>
+                    </div>
+
+                    <div id="pdfCompressResult" class="alert border border-success bg-success-subtle mt-3 text-center" style="display: none;">
+                        <div id="pdfCompressStatus" class="small mb-2 text-body-emphasis"><i class="bi bi-check-circle me-1"></i> PDF Successfully Compressed!</div>
+                        <button id="downloadPdfCompressBtn" class="btn btn-success rounded-pill fw-bold px-4"><i class="bi bi-download me-2"></i>Download Compressed PDF</button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    
+    <script>
+        // Setup PDF.js Worker
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+        function sendTelemetry(action, searchData, clicked) {
+            try {
+                var payload = JSON.stringify({ action: action || 'Event', search_data: searchData || '', clicked: clicked || '', page: '/resizer' });
+                if (navigator.sendBeacon) { navigator.sendBeacon('/api/telemetry', payload); }
+                else { fetch('/api/telemetry', { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: payload, keepalive: true }); }
+            } catch (e) {}
+        }
+
+        $(document).ready(function() {
+            $('html').attr('data-bs-theme', localStorage.getItem('keam_ui_theme') || 'light');
+            sendTelemetry('Page Load', '', '');
+
+            let croppers = { photo: null, sig: null, imgPdf: null };
+            let payloads = { photo: null, sig: null, imgPdf: null, pdfCompress: null };
+
+            // === PRESET DATA MAPS ===
+            const presets = {
+                photo: {
+                    keam: { w: 150, h: 200, min: 15, max: 100 },
+                    jee: { w: 275, h: 354, min: 10, max: 200 },
+                    neet: { w: 275, h: 354, min: 10, max: 200 }
+                },
+                sig: {
+                    keam: { w: 150, h: 100, min: 10, max: 100 },
+                    jee: { w: 275, h: 118, min: 4, max: 30 },
+                    neet: { w: 275, h: 118, min: 4, max: 30 }
+                },
+                imgPdf: { keam: { max: 500 }, jee: { max: 300 }, neet: { max: 300 } },
+                pdfCompress: { keam: { max: 500 }, jee: { max: 300 }, neet: { max: 300 } }
+            };
+
+            // Setup Select Handlers
+            function bindPreset(prefix, dataMap) {
+                $(`#${prefix}Preset`).on('change', function() {
+                    const val = $(this).val();
+                    if (val === 'custom') {
+                        $(`.${prefix}-config`).prop('readonly', false).removeClass('bg-body-tertiary');
+                    } else {
+                        const p = dataMap[val];
+                        if (p.w) $(`#${prefix}W`).val(p.w);
+                        if (p.h) $(`#${prefix}H`).val(p.h);
+                        if (p.min) $(`#${prefix}MinKb`).val(p.min);
+                        if (p.max) $(`#${prefix}MaxKb`).val(p.max);
+                        $(`.${prefix}-config`).prop('readonly', true).addClass('bg-body-tertiary');
+                    }
+                    if (croppers[prefix]) croppers[prefix].setAspectRatio(parseInt($(`#${prefix}W`).val()) / parseInt($(`#${prefix}H`).val()));
+                });
+            }
+
+            bindPreset('photo', presets.photo);
+            bindPreset('sig', presets.sig);
+            bindPreset('imgPdf', presets.imgPdf);
+            bindPreset('pdfCompress', presets.pdfCompress);
+
+            // Core compression engine
+            function compressCrop(canvas, maxKb, minKb) {
+                let quality = 1.0;
+                let dataUrl = canvas.toDataURL('image/jpeg', quality);
+                let sizeKb = (dataUrl.length * (3/4)) / 1024;
+
+                while (sizeKb > maxKb && quality > 0.10) {
+                    quality -= 0.05;
+                    dataUrl = canvas.toDataURL('image/jpeg', quality);
+                    sizeKb = (dataUrl.length * (3/4)) / 1024;
+                }
+                return { src: dataUrl, kb: Math.round(sizeKb), valid: (sizeKb >= minKb && sizeKb <= maxKb) };
+            }
+
+            function setupUploader(inputId, targetImgId, workspaceId, actionAreaId, cropperKey, getRatioFunc) {
+                $(`#${inputId}`).on('change', function(e) {
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = function(evt) {
+                        const imgElem = document.getElementById(targetImgId);
+                        imgElem.src = evt.target.result;
+                        $(`#${workspaceId}`).show();
+                        $(`#${actionAreaId}`).show();
+                        $(`#${cropperKey}Result`).hide();
+
+                        if (croppers[cropperKey]) croppers[cropperKey].destroy();
+
+                        croppers[cropperKey] = new Cropper(imgElem, {
+                            aspectRatio: getRatioFunc ? getRatioFunc() : NaN,
+                            viewMode: 1, dragMode: 'move', autoCropArea: 0.9,
+                            guides: true, center: true, highlight: false,
+                            cropBoxMovable: true, cropBoxResizable: true,
+                        });
+                    };
+                    reader.readAsDataURL(file);
+                });
+            }
+
+            // ==========================================
+            // 1 & 2. PHOTO & SIGNATURE LOGIC
+            // ==========================================
+            setupUploader('photoFile', 'photoTarget', 'photoWorkspace', 'photoActionArea', 'photo', () => parseInt($('#photoW').val()) / parseInt($('#photoH').val()));
+            setupUploader('sigFile', 'sigTarget', 'sigWorkspace', 'sigActionArea', 'sig', () => parseInt($('#sigW').val()) / parseInt($('#sigH').val()));
+
+            $('#photoW, #photoH').on('input', () => { if(croppers.photo) croppers.photo.setAspectRatio(parseInt($('#photoW').val()) / parseInt($('#photoH').val())); });
+            $('#sigW, #sigH').on('input', () => { if(croppers.sig) croppers.sig.setAspectRatio(parseInt($('#sigW').val()) / parseInt($('#sigH').val())); });
+
+            function processImage(prefix) {
+                sendTelemetry('Resize', JSON.stringify({ tool: prefix, preset: $(`#${prefix}Preset`).val() }), 'process_' + prefix);
+                const targetW = parseInt($(`#${prefix}W`).val());
+                const targetH = parseInt($(`#${prefix}H`).val());
+                const minKb = parseInt($(`#${prefix}MinKb`).val());
+                const maxKb = parseInt($(`#${prefix}MaxKb`).val());
+
+                const canvas = croppers[prefix].getCroppedCanvas({ width: targetW, height: targetH, fillColor: '#fff' });
+                const result = compressCrop(canvas, maxKb, minKb);
+                payloads[prefix] = result.src;
+
+                let msg = `Extracted: <strong>${targetW}x${targetH} px</strong> | Size: <strong>~${result.kb} KB</strong>`;
+                if (!result.valid) msg += `<br><span class="text-danger fw-bold"><i class="bi bi-exclamation-triangle"></i> Warning: Outside limit constraints.</span>`;
+                else msg += `<br><span class="text-success fw-bold"><i class="bi bi-check"></i> Perfect file size.</span>`;
+
+                $(`#${prefix}Status`).html(msg);
+                $(`#${prefix}Result`).slideDown();
+            }
+
+            $('#processPhotoBtn').on('click', () => processImage('photo'));
+            $('#processSigBtn').on('click', () => processImage('sig'));
+
+            $('#downloadPhotoBtn').on('click', () => {
+                const a = document.createElement('a'); a.download = 'Exam_Photo_Formatted.jpg'; a.href = payloads.photo; a.click();
+            });
+            $('#downloadSigBtn').on('click', () => {
+                const a = document.createElement('a'); a.download = 'Exam_Signature_Formatted.jpg'; a.href = payloads.sig; a.click();
+            });
+
+            // ==========================================
+            // 3. IMAGE-TO-PDF LOGIC
+            // ==========================================
+            setupUploader('imgPdfFile', 'imgPdfTarget', 'imgPdfWorkspace', 'imgPdfActionArea', 'imgPdf', () => NaN);
+
+            $('#processImgPdfBtn').on('click', function() {
+                sendTelemetry('Compile', JSON.stringify({ preset: $('#imgPdfPreset').val() }), 'process_imgPdf');
+                const btn = $(this);
+                btn.html('<span class="spinner-border spinner-border-sm me-2"></span>Compiling...').prop('disabled', true);
+
+                setTimeout(() => {
+                    const canvas = croppers.imgPdf.getCroppedCanvas({ fillColor: '#fff' });
+                    const userMaxKb = parseInt($('#imgPdfMaxKb').val());
+                    const result = compressCrop(canvas, userMaxKb, 0);
+
+                    const { jsPDF } = window.jspdf;
+                    const doc = new jsPDF('p', 'mm', 'a4');
+                    const pageW = doc.internal.pageSize.getWidth();
+                    const pageH = doc.internal.pageSize.getHeight();
+                    const margin = 12;
+                    
+                    let fitW = pageW - (margin * 2);
+                    let fitH = (canvas.height * fitW) / canvas.width;
+
+                    if (fitH > (pageH - margin * 2)) {
+                        fitH = pageH - (margin * 2);
+                        fitW = (canvas.width * fitH) / canvas.height;
+                    }
+
+                    doc.addImage(result.src, 'JPEG', (pageW - fitW) / 2, (pageH - fitH) / 2, fitW, fitH);
+                    payloads.imgPdf = doc.output('bloburl');
+                    
+                    btn.html('<i class="bi bi-filetype-pdf me-2"></i>Crop & Compile Document').prop('disabled', false);
+                    $('#imgPdfResult').slideDown();
+                }, 100);
+            });
+
+            $('#downloadImgPdfBtn').on('click', () => {
+                const a = document.createElement('a'); a.download = 'Exam_Certificate_Compiled.pdf'; a.href = payloads.imgPdf; a.click();
+            });
+
+            // ==========================================
+            // 4. PDF COMPRESSOR LOGIC (pdf.js Engine)
+            // ==========================================
+            $('#pdfCompressFile').on('change', function() {
+                if (this.files.length > 0) $('#pdfCompressActionArea').slideDown();
+            });
+
+            $('#processPdfCompressBtn').on('click', async function() {
+                const fileInput = document.getElementById('pdfCompressFile');
+                if (!fileInput.files.length) return;
+                sendTelemetry('Compress', JSON.stringify({ preset: $('#pdfCompressPreset').val() }), 'process_pdfCompress');
+                
+                const btn = $(this);
+                btn.html('<span class="spinner-border spinner-border-sm me-2"></span>Compressing PDF...').prop('disabled', true);
+                
+                try {
+                    const maxKb = parseInt($('#pdfCompressMaxKb').val()) || 300;
+                    const file = fileInput.files[0];
+                    const arrayBuffer = await file.arrayBuffer();
+                    const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
+                    
+                    const { jsPDF } = window.jspdf;
+                    const outPdf = new jsPDF('p', 'mm', 'a4');
+                    
+                    // Tune resolution scaling based on the strictness of the KB limit
+                    let quality = maxKb > 400 ? 0.75 : (maxKb > 200 ? 0.60 : 0.45);
+                    let scale = maxKb > 400 ? 1.4 : 1.1;
+                    
+                    for (let i = 1; i <= pdf.numPages; i++) {
+                        const page = await pdf.getPage(i);
+                        const viewport = page.getViewport({ scale: scale });
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+                        canvas.width = viewport.width;
+                        canvas.height = viewport.height;
+                        
+                        await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+                        
+                        const imgData = canvas.toDataURL('image/jpeg', quality);
+                        if (i > 1) outPdf.addPage();
+                        
+                        outPdf.addImage(imgData, 'JPEG', 0, 0, outPdf.internal.pageSize.getWidth(), outPdf.internal.pageSize.getHeight());
+                    }
+                    
+                    payloads.pdfCompress = outPdf.output('bloburl');
+                    $('#pdfCompressResult').slideDown();
+                } catch (e) {
+                    alert("Error compressing PDF. Ensure it is a valid, unencrypted PDF file.");
+                } finally {
+                    btn.html('<i class="bi bi-file-earmark-zip me-2"></i>Compress PDF').prop('disabled', false);
+                }
+            });
+
+            $('#downloadPdfCompressBtn').on('click', () => {
+                const a = document.createElement('a'); a.download = 'Exam_Document_Compressed.pdf'; a.href = payloads.pdfCompress; a.click();
+            });
+        });
+    </script>
+</body>
+</html>

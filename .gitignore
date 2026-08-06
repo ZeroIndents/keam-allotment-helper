@@ -1,0 +1,22 @@
+# Virtual environments
+venv/
+Alpha1/
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Databases (credentials/PII live in DB files)
+*.db
+*.db-*
+
+# OS / editor files
+.DS_Store
+
+# Backups / archives
+*.tar.gz
+college_project_archive/
+
+# Environment / secrets
+college.env
+.env
