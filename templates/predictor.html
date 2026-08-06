@@ -92,6 +92,8 @@
         #themeToggleBtn:hover { transform: rotate(-8deg) scale(1.05); }
 
         .reach-yes { color: #198754; font-weight: 700; }
+        .reach-mid { color: #b45309; font-weight: 700; }
+        [data-bs-theme="dark"] .reach-mid { color: #fbbf24; }
         .reach-no { color: #dc3545; font-weight: 700; }
 
         @media (max-width: 767.98px) {
@@ -134,7 +136,7 @@
 
         <div class="card shadow-sm border-0 rounded-4 mb-4 anim-in anim-in-1">
             <div class="card-body p-4 p-md-5">
-                <form id="predictorForm" novalidate>
+                <form id="predictorForm">
                     <div class="row g-4">
                         <div class="col-md-6">
                             <label class="form-label fw-bold small text-uppercase text-muted" for="keamScore">KEAM Entrance Score</label>
@@ -212,11 +214,11 @@
                     <h2 class="h6 fw-bold mb-0"><i class="bi bi-crosshair me-2 text-primary"></i>How Your Bracket Compares to Real 2026 Cutoffs</h2>
                     <span class="chip bg-primary-subtle text-primary border border-primary-subtle" id="compareYearTag">State Merit · 2026</span>
                 </div>
-                <p class="text-xs text-muted small mb-3">Closing rank = the rank of the <b>last student admitted</b> in 2026. If your predicted bracket is better (smaller) than a college's closing rank, that college was <b>within your reach</b>.</p>
+                <p class="text-xs text-muted small mb-3">Closing rank = the rank of the <b>last student admitted</b> in 2026. <span class="reach-yes">Green</span> = comfortably within reach · <span class="reach-mid">Yellow</span> = borderline (only at the better end of your bracket) · <span class="reach-no">Red</span> = tougher.</p>
 
                 <div class="d-flex flex-wrap gap-2 mb-3">
                     <span class="small fw-bold text-muted text-uppercase align-self-center">Course:</span>
-                    <button type="button" class="btn btn-sm btn-outline-primary rounded-pill course-chip active" data-course="CS">CS — Computer Science</button>
+                    <button type="button" class="btn btn-sm btn-primary rounded-pill course-chip active" data-course="CS">CS — Computer Science</button>
                     <button type="button" class="btn btn-sm btn-outline-primary rounded-pill course-chip" data-course="EC">EC — Electronics</button>
                     <button type="button" class="btn btn-sm btn-outline-primary rounded-pill course-chip" data-course="ME">ME — Mechanical</button>
                     <button type="button" class="btn btn-sm btn-outline-primary rounded-pill course-chip" data-course="EE">EE — Electrical</button>
@@ -293,6 +295,11 @@
             }
         }
 
+        // ══ Escape HTML in dynamic names ══
+        function esc(s) {
+            return String(s == null ? '' : s).replace(/[&<>"']/g, function(m) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]; });
+        }
+
         // ══ 2026 Brilliant Pala bracket matching (unchanged formula) ══
         function bracketFor(totalIndex) {
             if (totalIndex >= 585) return { text: 'Top 5', best: 1, worst: 5, cls: 'text-success' };
@@ -346,12 +353,18 @@
                     return;
                 }
                 var rows = data.slice(0, 10).map(function(d) {
-                    var reachable = d.last >= bracket.best;
-                    var tag = reachable
-                        ? '<span class="reach-yes"><i class="bi bi-check-circle-fill me-1"></i>Within reach</span>'
-                        : '<span class="reach-no"><i class="bi bi-x-circle-fill me-1"></i>Tougher</span>';
+                    var tag;
+                    if (d.last >= bracket.worst) {
+                        tag = '<span class="reach-yes"><i class="bi bi-check-circle-fill me-1"></i>Within reach</span>';
+                    } else if (d.last >= bracket.best) {
+                        tag = '<span class="reach-mid"><i class="bi bi-exclamation-triangle-fill me-1"></i>Borderline</span>';
+                    } else {
+                        tag = '<span class="reach-no"><i class="bi bi-x-circle-fill me-1"></i>Tougher</span>';
+                    }
+                    var parts = d.college.split(' - ');
+                    var name = parts.length > 1 ? parts.slice(1).join(' - ') : d.college;
                     return '<tr>' +
-                        '<td class="fw-medium">' + d.college.replace(/^[A-Z]{2,4} - /, '') + '</td>' +
+                        '<td class="fw-medium">' + esc(name) + '</td>' +
                         '<td class="text-center">' + d.cutoff.toLocaleString() + '</td>' +
                         '<td class="text-center">' + d.last.toLocaleString() + '</td>' +
                         '<td class="text-center">' + tag + '</td>' +
