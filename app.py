@@ -213,6 +213,11 @@ def counselling_portal():
     return render_template('counselling.html')
 
 
+@app.route('/guide')
+def how_to_use_guide():
+    return render_template('guide.html')
+
+
 @app.route('/trends')
 def trends_portal():
     # trends.html no longer exists — point visitors at the statistics dashboard.

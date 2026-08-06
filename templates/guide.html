@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+<head>
+    <title>How to Use This Site | KEAM Allotment Helper Guide</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="A plain-language guide to using the KEAM Allotment Helper: how to predict your rank, find colleges within reach, search cutoffs, read statistics, and use the counselling checklist.">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style>
+        :root { scroll-behavior: smooth; }
+        body { font-size: 15px; color: var(--bs-body-color); position: relative; min-height: 100vh; overflow-x: hidden; }
+        body {
+            background: linear-gradient(-45deg, #eef2ff, #e0f2fe, #f0fdfa, #faf5ff, #eff6ff);
+            background-size: 400% 400%;
+            animation: gradientShift 18s ease infinite;
+        }
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        [data-bs-theme="dark"] body {
+            background: linear-gradient(-45deg, #0a0e1a, #0f172a, #131c31, #1a1030, #0d1424);
+            background-size: 400% 400%;
+            animation: gradientShift 20s ease infinite;
+        }
+        .bg-blobs { position: fixed; inset: 0; z-index: -2; overflow: hidden; pointer-events: none; }
+        .blob { position: absolute; border-radius: 50%; filter: blur(70px); opacity: 0.5; animation: floatBlob 20s ease-in-out infinite; }
+        .blob-1 { width: 420px; height: 420px; background: radial-gradient(circle, #93c5fd, transparent 70%); top: -80px; left: -60px; }
+        .blob-2 { width: 360px; height: 360px; background: radial-gradient(circle, #a7f3d0, transparent 70%); top: 40%; right: -80px; animation-delay: -5s; }
+        .blob-3 { width: 400px; height: 400px; background: radial-gradient(circle, #ddd6fe, transparent 70%); bottom: -100px; left: 30%; animation-delay: -10s; }
+        @keyframes floatBlob {
+            0%,100% { transform: translate(0,0) scale(1); }
+            33% { transform: translate(40px,-30px) scale(1.1); }
+            66% { transform: translate(-30px,40px) scale(0.95); }
+        }
+        [data-bs-theme="dark"] .blob { opacity: 0.35; filter: blur(80px); }
+        [data-bs-theme="dark"] .blob-1 { background: radial-gradient(circle, #1e40af, transparent 70%); }
+        [data-bs-theme="dark"] .blob-2 { background: radial-gradient(circle, #065f46, transparent 70%); }
+        [data-bs-theme="dark"] .blob-3 { background: radial-gradient(circle, #5b21b6, transparent 70%); }
+        .stars { position: fixed; inset: 0; z-index: -1; pointer-events: none; opacity: 0; transition: opacity 0.6s; }
+        [data-bs-theme="dark"] .stars { opacity: 1; }
+        .star { position: absolute; background: #fff; border-radius: 50%; animation: twinkle 3s ease-in-out infinite; }
+        @keyframes twinkle { 0%,100% { opacity: 0.15; } 50% { opacity: 0.9; } }
+
+        .text-gradient { background: linear-gradient(90deg, #0d6efd, #0dcaf0); -webkit-background-clip: text; -webkit-text-fill-color: transparent; display: inline-block; }
+        [data-bs-theme="dark"] .text-gradient { background: linear-gradient(90deg, #6ea8fe, #8c68cd); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+        .card {
+            background: rgba(255,255,255,0.72) !important;
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid rgba(255,255,255,0.5) !important;
+            box-shadow: 0 8px 32px rgba(31,38,135,0.08) !important;
+        }
+        [data-bs-theme="dark"] .card { background: rgba(23,32,50,0.72) !important; border-color: #2b3a52 !important; }
+
+        .chip { font-size: 12px; font-weight: 700; padding: 6px 14px; border-radius: 999px; }
+        .anim-in { animation: animIn 0.6s cubic-bezier(0.22,1,0.36,1) both; }
+        @keyframes animIn { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
+
+        .tool-card { transition: transform 0.25s ease, box-shadow 0.25s ease; text-decoration: none; color: inherit; display: block; }
+        .tool-card:hover { transform: translateY(-4px); box-shadow: 0 14px 44px rgba(31,38,135,0.16) !important; text-decoration: none; }
+
+        .step-num { width: 34px; height: 34px; border-radius: 50%; background: #0d6efd; color: #fff; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        [data-bs-theme="dark"] .step-num { background: #6ea8fe; color: #0a0e1a; }
+
+        details.tool-details > summary { cursor: pointer; }
+        details.tool-details > summary::-webkit-details-marker { display: none; }
+        details.tool-details[open] .card { border-color: rgba(13,110,253,0.4) !important; }
+
+        #themeToggleBtn { transition: transform 0.4s ease; }
+        #themeToggleBtn:hover { transform: rotate(-8deg) scale(1.05); }
+
+        .glossary-term { font-weight: 700; color: var(--bs-primary); }
+        .rotate-180 { transform: rotate(180deg); transition: transform 0.25s ease; }
+        .v-green { color: #198754; font-weight: 700; }
+        .v-amber { color: #b45309; font-weight: 700; }
+        [data-bs-theme="dark"] .v-amber { color: #fbbf24; }
+        .v-red { color: #dc3545; font-weight: 700; }
+        @media (max-width: 767.98px) { body { font-size: 14.5px; } }
+    </style>
+</head>
+<body>
+
+    <div class="bg-blobs">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+    </div>
+    <div class="stars" id="starsLayer"></div>
+
+    <div class="container mt-3 mt-md-4 mb-5" style="max-width: 900px;">
+        <div class="d-flex justify-content-between align-items-start mb-3">
+            <a href="/" class="btn btn-sm btn-outline-secondary rounded-pill"><i class="bi bi-arrow-left me-1"></i> Back to Allotment Helper</a>
+            <button id="themeToggleBtn" class="btn btn-outline-secondary px-3 rounded-pill shadow-sm">
+                <i id="themeIcon" class="bi bi-moon-stars-fill me-2"></i><span id="themeText">Dark</span>
+            </button>
+        </div>
+
+        <div class="text-center mb-4 anim-in">
+            <h1 class="fw-bold mb-2" style="font-size: 2.1rem;">
+                <i class="bi bi-compass me-2 text-primary"></i><span class="text-gradient">How to Use This Site</span>
+            </h1>
+            <p class="text-secondary mx-auto" style="max-width: 680px; line-height: 1.7;">
+                No jargon, no confusion. This page walks you through every tool on the site — from predicting your rank to packing the right documents for counselling. <b>Start with Step 1 below.</b>
+            </p>
+        </div>
+
+        <!-- ══ 4-step quick journey ══ -->
+        <div class="card shadow-sm border-0 rounded-4 mb-4 anim-in">
+            <div class="card-body p-4 p-md-5">
+                <h2 class="h5 fw-bold mb-1"><i class="bi bi-signpost-2 me-2 text-primary"></i>Your 3-minute journey, in one glance</h2>
+                <p class="text-secondary small mb-4">Most people use the site in this order. Click any step to jump straight to its full guide.</p>
+                <div class="row g-3">
+                    <div class="col-12 col-md-6 col-lg-3">
+                        <a href="#tool-predictor" class="card border-0 shadow-sm h-100 p-3 text-decoration-none text-reset tool-card">
+                            <span class="step-num mb-2">1</span>
+                            <h6 class="fw-bold mb-1">🧮 Predict your rank</h6>
+                            <p class="text-secondary small mb-0">Enter your marks once and get an expected rank range.</p>
+                        </a>
+                    </div>
+                    <div class="col-12 col-md-6 col-lg-3">
+                        <a href="#tool-options" class="card border-0 shadow-sm h-100 p-3 text-decoration-none text-reset tool-card">
+                            <span class="step-num mb-2">2</span>
+                            <h6 class="fw-bold mb-1">🎯 Find your options</h6>
+                            <p class="text-secondary small mb-0">See which colleges & courses are Safe, Moderate or Ambitious for your rank.</p>
+                        </a>
+                    </div>
+                    <div class="col-12 col-md-6 col-lg-3">
+                        <a href="#tool-search" class="card border-0 shadow-sm h-100 p-3 text-decoration-none text-reset tool-card">
+                            <span class="step-num mb-2">3</span>
+                            <h6 class="fw-bold mb-1">🔍 Verify in cutoffs</h6>
+                            <p class="text-secondary small mb-0">Check exact opening/closing ranks from the official allotment lists.</p>
+                        </a>
+                    </div>
+                    <div class="col-12 col-md-6 col-lg-3">
+                        <a href="#tool-counselling" class="card border-0 shadow-sm h-100 p-3 text-decoration-none text-reset tool-card">
+                            <span class="step-num mb-2">4</span>
+                            <h6 class="fw-bold mb-1">📋 Prepare for counselling</h6>
+                            <p class="text-secondary small mb-0">Follow the round timeline and pack the right documents.</p>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══ Tool index ══ -->
+        <h2 class="h5 fw-bold mb-3 anim-in"><i class="bi bi-grid-1x2 me-2 text-primary"></i>All the tools, explained in one line each</h2>
+        <div class="row g-3 mb-4">
+            <div class="col-12 col-md-6 col-lg-4">
+                <a href="/options" class="card border-0 shadow-sm p-3 tool-card h-100">
+                    <div class="d-flex align-items-center gap-2 mb-1"><i class="bi bi-geo-alt-fill text-primary fs-5"></i><h6 class="fw-bold mb-0">Find My Options</h6></div>
+                    <p class="text-secondary small mb-0">"With my rank, which colleges can I actually get?" — answered in seconds.</p>
+                </a>
+            </div>
+            <div class="col-12 col-md-6 col-lg-4">
+                <a href="/predictor" class="card border-0 shadow-sm p-3 tool-card h-100">
+                    <div class="d-flex align-items-center gap-2 mb-1"><i class="bi bi-calculator text-success fs-5"></i><h6 class="fw-bold mb-0">Predict Rank</h6></div>
+                    <p class="text-secondary small mb-0">Convert your exam marks into an expected KEAM rank range.</p>
+                </a>
+            </div>
+            <div class="col-12 col-md-6 col-lg-4">
+                <a href="/" class="card border-0 shadow-sm p-3 tool-card h-100">
+                    <div class="d-flex align-items-center gap-2 mb-1"><i class="bi bi-search text-info fs-5"></i><h6 class="fw-bold mb-0">Cutoff Search</h6></div>
+                    <p class="text-secondary small mb-0">The homepage — look up any student's allotment by register number, or browse ranks.</p>
+                </a>
+            </div>
+            <div class="col-12 col-md-6 col-lg-4">
+                <a href="/statistics" class="card border-0 shadow-sm p-3 tool-card h-100">
+                    <div class="d-flex align-items-center gap-2 mb-1"><i class="bi bi-bar-chart-line-fill text-primary fs-5"></i><h6 class="fw-bold mb-0">Statistics</h6></div>
+                    <p class="text-secondary small mb-0">Charts and trends — which colleges are tough, how cutoffs move round by round.</p>
+                </a>
+            </div>
+            <div class="col-12 col-md-6 col-lg-4">
+                <a href="/counselling" class="card border-0 shadow-sm p-3 tool-card h-100">
+                    <div class="d-flex align-items-center gap-2 mb-1"><i class="bi bi-list-check text-warning fs-5"></i><h6 class="fw-bold mb-0">Counselling Guide</h6></div>
+                    <p class="text-secondary small mb-0">The allotment timeline plus a checklist of documents to carry.</p>
+                </a>
+            </div>
+            <div class="col-12 col-md-6 col-lg-4">
+                <a href="/resizer" class="card border-0 shadow-sm p-3 tool-card h-100">
+                    <div class="d-flex align-items-center gap-2 mb-1"><i class="bi bi-crop text-success fs-5"></i><h6 class="fw-bold mb-0">Resize Files</h6></div>
+                    <p class="text-secondary small mb-0">Crop & resize your photo/signature to the exact size CEE asks for.</p>
+                </a>
+            </div>
+        </div>
+
+        <!-- ══ Full guides ══ -->
+        <h2 class="h5 fw-bold mb-3 anim-in"><i class="bi bi-book-half me-2 text-primary"></i>Full step-by-step guides</h2>
+
+        <!-- Guide: Predictor -->
+        <details class="tool-details card shadow-sm border-0 rounded-4 mb-3 anim-in" id="tool-predictor" open>
+            <summary class="card-body py-3 px-4 fw-bold d-flex align-items-center justify-content-between">
+                <span><i class="bi bi-calculator me-2 text-success"></i>1 · Predict your rank</span>
+                <i class="bi bi-chevron-down"></i>
+            </summary>
+            <div class="px-4 pb-4 text-secondary" style="line-height: 1.8;">
+                <p class="fw-bold text-body">What it does:</p>
+                <p class="mb-3">Your final KEAM rank comes from two parts: your <b>entrance exam score</b> (out of 300) plus your <b>Class 12 marks</b> (converted to a score out of 300) using the official <b>5:3:2</b> formula — Math counts 50%, Physics 30%, Chemistry 20%. This tool does that math for you and shows an expected rank range.</p>
+                <p class="fw-bold text-body mb-1">Step by step:</p>
+                <ol class="mb-3">
+                    <li>Open the <b>Predict Rank</b> page (button on the homepage, or the card above).</li>
+                    <li>Choose <b>Raw score / 600</b> if you remember your entrance marks out of 600. If you already know CEE's normalized score out of 300, switch to <b>Normalized / 300</b>.</li>
+                    <li>Select your <b>Class 12 board</b> (Kerala State DHSE or CBSE/ISC).</li>
+                    <li>Enter your <b>Math, Physics and Chemistry</b> board marks.</li>
+                    <li>Watch the <b>live meter</b> at the bottom — it previews your total as you type.</li>
+                    <li>Press <b>Calculate Expected Rank</b>. You'll get a colored rank range (e.g. "3,000 - 4,000") and a plain-language explanation.</li>
+                    <li>Use the <b>compare panel</b> to see real 2026 cutoffs for CS/EC/ME/EE/CE and whether they're <span class="v-green">Within reach</span>, <span class="v-amber">Borderline</span> or <span class="v-red">Tougher</span>.</li>
+                </ol>
+                <div class="alert alert-light border rounded-3 small mb-0"><i class="bi bi-info-circle me-1"></i> <b>Heads up:</b> the entrance score is normalized by CEE based on how candidates performed that year, so the halving is an <b>estimate</b>. Treat the result as a guide, not a guarantee.</div>
+            </div>
+        </details>
+
+        <!-- Guide: Options -->
+        <details class="tool-details card shadow-sm border-0 rounded-4 mb-3 anim-in" id="tool-options">
+            <summary class="card-body py-3 px-4 fw-bold d-flex align-items-center justify-content-between">
+                <span><i class="bi bi-geo-alt-fill me-2 text-primary"></i>2 · Find your options</span>
+                <i class="bi bi-chevron-down"></i>
+            </summary>
+            <div class="px-4 pb-4 text-secondary" style="line-height: 1.8;">
+                <p class="fw-bold text-body">What it does:</p>
+                <p class="mb-3">The most asked question in Kerala every year: <b>"With my rank, which college can I get?"</b> This tool compares your rank against the real closing ranks of every college-course combination in the database and tags each one.</p>
+                <p class="fw-bold text-body mb-1">Step by step:</p>
+                <ol class="mb-3">
+                    <li>Open the <b>Find My Options</b> page.</li>
+                    <li>Enter your <b>rank</b> (smaller is better — rank 1 is the top student).</li>
+                    <li>Pick your <b>category</b> (usually SM — State Merit) and <b>round</b> (Phase 3, the final round, is the most useful).</li>
+                    <li>Optionally type a course code (CS, EC, ME...) to narrow it down. Leave blank to see everything.</li>
+                    <li>Press <b>Go</b> — you'll get a table of colleges with verdicts.</li>
+                </ol>
+                <p class="fw-bold text-body mb-1">What the colors mean:</p>
+                <ul class="mb-3">
+                    <li><span class="v-green"><i class="bi bi-check-circle-fill"></i> Safe</span> — last year's cutoff was comfortably below your rank. Very likely in.</li>
+                    <li><span class="v-amber"><i class="bi bi-exclamation-triangle-fill"></i> Moderate</span> — your rank is right around last year's cutoff. 50-50.</li>
+                    <li><span class="v-red"><i class="bi bi-fire"></i> Ambitious</span> — just missed it last year, but cutoffs move every year.</li>
+                </ul>
+                <div class="alert alert-light border rounded-3 small mb-0"><i class="bi bi-lightbulb me-1"></i> <b>Strategy tip:</b> order your CEE choice list by <b>preference</b>, not by safety — include your dream college first, then realistic ones, then a sure-shot backup. CEE gives you the highest option you qualify for.</div>
+            </div>
+        </details>
+
+        <!-- Guide: Cutoff search -->
+        <details class="tool-details card shadow-sm border-0 rounded-4 mb-3 anim-in" id="tool-search">
+            <summary class="card-body py-3 px-4 fw-bold d-flex align-items-center justify-content-between">
+                <span><i class="bi bi-search me-2 text-info"></i>3 · Search cutoffs & allotments (homepage)</span>
+                <i class="bi bi-chevron-down"></i>
+            </summary>
+            <div class="px-4 pb-4 text-secondary" style="line-height: 1.8;">
+                <p class="fw-bold text-body">What it does:</p>
+                <p class="mb-3">The homepage is a giant, searchable table of the official allotment lists — every student who was allotted a seat, with their register number, rank, college, course, category and seat type.</p>
+                <p class="fw-bold text-body mb-1">Ways to search:</p>
+                <ul class="mb-3">
+                    <li><b>By register number</b> — type a Reg No to see exactly where that student was allotted.</li>
+                    <li><b>By rank</b> — see which colleges students around your rank were admitted to.</li>
+                    <li><b>By college / course / category / seat</b> — browse the filters to explore cutoffs (e.g. filter college + course to see opening and closing ranks per category).</li>
+                    <li>Use <b>Year</b> (2026/2025/2024) and <b>Round</b> (Phase 1/2/3) to compare how things changed.</li>
+                </ul>
+                <p class="fw-bold text-body mb-1">Pro trick:</p>
+                <p class="mb-0">Select a <b>college</b> and a <b>course</b> together and the page shows <b>Category Rank Ranges</b> cards above the table — the opening → closing rank for each category. That's the exact "cutoff" everyone talks about.</p>
+            </div>
+        </details>
+
+        <!-- Guide: Statistics -->
+        <details class="tool-details card shadow-sm border-0 rounded-4 mb-3 anim-in" id="tool-stats">
+            <summary class="card-body py-3 px-4 fw-bold d-flex align-items-center justify-content-between">
+                <span><i class="bi bi-bar-chart-line-fill me-2 text-primary"></i>4 · Read the statistics</span>
+                <i class="bi bi-chevron-down"></i>
+            </summary>
+            <div class="px-4 pb-4 text-secondary" style="line-height: 1.8;">
+                <p class="fw-bold text-body">What it does:</p>
+                <p class="mb-3">A dashboard for spotting patterns — written in plain language so you don't need a data degree to read it.</p>
+                <p class="fw-bold text-body mb-1">What each section means:</p>
+                <ul class="mb-3">
+                    <li><b>Quick Takeaways</b> — the page's auto-generated highlights (toughest branch, easiest to enter, where competition is fierce).</li>
+                    <li><b>Toughest Branches</b> — courses with the lowest cutoffs (hardest to get into).</li>
+                    <li><b>How cutoffs moved round by round</b> — did cutoffs rise or fall between Phase 1 → 2 → 3? Falling = students moving up, freeing seats.</li>
+                    <li><b>Students who switched colleges</b> — how many people jumped colleges between rounds, and where they went.</li>
+                    <li><b>How much do cutoffs swing?</b> — the gap between opening and closing rank for each college. Big swing = lots of students admitted.</li>
+                    <li><b>Compare two colleges</b> — side-by-side cutoffs to help you decide between two picks.</li>
+                    <li><b>Heatmap</b> — a color grid of how tough each college is per course (darker = tougher).</li>
+                </ul>
+                <div class="alert alert-light border rounded-3 small mb-0"><i class="bi bi-info-circle me-1"></i> Start with the <b>"How to read this page"</b> guide at the top of the statistics page — it explains rank, opening vs closing, and quota codes in one sentence each.</div>
+            </div>
+        </details>
+
+        <!-- Guide: Counselling -->
+        <details class="tool-details card shadow-sm border-0 rounded-4 mb-3 anim-in" id="tool-counselling">
+            <summary class="card-body py-3 px-4 fw-bold d-flex align-items-center justify-content-between">
+                <span><i class="bi bi-list-check me-2 text-warning"></i>5 · Prepare for counselling</span>
+                <i class="bi bi-chevron-down"></i>
+            </summary>
+            <div class="px-4 pb-4 text-secondary" style="line-height: 1.8;">
+                <p class="fw-bold text-body">What it does:</p>
+                <p class="mb-3">Two things students always stress about: <b>"When is everything happening?"</b> and <b>"What documents do I need?"</b> This page answers both.</p>
+                <p class="fw-bold text-body mb-1">Step by step:</p>
+                <ol class="mb-3">
+                    <li>Open the <b>Counselling Guide</b> page.</li>
+                    <li>Read the <b>timeline</b> — the shape of the process from option registration to final round. (Exact dates change yearly; always confirm on cee.kerala.gov.in.)</li>
+                    <li>Work through the <b>document checklist</b> — tick items off as you gather them.</li>
+                    <li>Your progress (e.g. "8 / 12 ready") is <b>saved on your device</b> — close the page and come back later, it remembers.</li>
+                </ol>
+                <div class="alert alert-light border rounded-3 small mb-0"><i class="bi bi-exclamation-triangle me-1"></i> <b>Don't skip:</b> reporting to the allotted college and paying fees within the deadline. Missing it cancels your seat.</div>
+            </div>
+        </details>
+
+        <!-- Guide: Resizer -->
+        <details class="tool-details card shadow-sm border-0 rounded-4 mb-4 anim-in" id="tool-resizer">
+            <summary class="card-body py-3 px-4 fw-bold d-flex align-items-center justify-content-between">
+                <span><i class="bi bi-crop me-2 text-success"></i>6 · Resize your photo & signature</span>
+                <i class="bi bi-chevron-down"></i>
+            </summary>
+            <div class="px-4 pb-4 text-secondary" style="line-height: 1.8;">
+                <p class="fw-bold text-body">What it does:</p>
+                <p class="mb-3">Application portals reject photos that are the wrong size. This tool crops and resizes your photo or signature to the exact pixel size you need — right in your browser, nothing is uploaded anywhere.</p>
+                <p class="fw-bold text-body mb-1">Step by step:</p>
+                <ol class="mb-0">
+                    <li>Open the <b>Resize Files</b> page.</li>
+                    <li>Upload your photo (or signature).</li>
+                    <li>Pick the target size (e.g. 100×120 px), or choose a preset.</li>
+                    <li>Crop the image in the preview, then download the resized file.</li>
+                </ol>
+            </div>
+        </details>
+
+        <!-- ══ Glossary ══ -->
+        <div class="card shadow-sm border-0 rounded-4 mb-4 anim-in">
+            <div class="card-body p-4 p-md-5">
+                <h2 class="h5 fw-bold mb-1"><i class="bi bi-journal-text me-2 text-primary"></i>Plain-language glossary</h2>
+                <p class="text-secondary small mb-4">Words you'll see everywhere on this site — decoded.</p>
+                <div class="row g-4">
+                    <div class="col-12 col-md-6">
+                        <h6 class="glossary-term">Rank</h6>
+                        <p class="text-secondary small mb-3">Your position among all KEAM candidates. Rank 1 is the best. <b>Smaller number = better.</b></p>
+                        <h6 class="glossary-term">Opening rank (Topper)</h6>
+                        <p class="text-secondary small mb-3">The rank of the best student admitted to that college & course. The "front door" of the cutoff.</p>
+                        <h6 class="glossary-term">Closing rank (Cutoff / Last admitted)</h6>
+                        <p class="text-secondary small mb-3">The rank of the <b>last</b> student who got a seat. If your rank is better (smaller) than the closing rank, you would have been admitted.</p>
+                        <h6 class="glossary-term">Phase / Round</h6>
+                        <p class="text-secondary small mb-3">CEE allots seats in rounds: Phase 1, then 2, then 3. Cutoffs usually change between rounds as students upgrade and free up seats.</p>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <h6 class="glossary-term">SM (State Merit)</h6>
+                        <p class="text-secondary small mb-3">The general category — no reservation. Most students fall here. The default choice on this site.</p>
+                        <h6 class="glossary-term">Quota codes (EZ, MU, SC, ST...)</h6>
+                        <p class="text-secondary small mb-3">Reserved categories — e.g. <b>EZ</b> = Ezhava, <b>MU</b> = Muslim, <b>SC</b> = Scheduled Caste, <b>ST</b> = Scheduled Tribe, <b>EW</b> = Economically Weaker. Cutoffs differ per category; the full list is in the legend on the Statistics page.</p>
+                        <h6 class="glossary-term">5:3:2 formula</h6>
+                        <p class="text-secondary small mb-3">How board marks are weighted for KEAM: Math 50% + Physics 30% + Chemistry 20%. That's the "5:3:2" you keep hearing.</p>
+                        <h6 class="glossary-term">Index / Total index</h6>
+                        <p class="text-secondary small mb-3">Your final combined score out of 600 (board part + entrance part) that decides your rank.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══ FAQ ══ -->
+        <div class="card shadow-sm border-0 rounded-4 mb-4 anim-in">
+            <div class="card-body p-4 p-md-5">
+                <h2 class="h5 fw-bold mb-3"><i class="bi bi-question-circle me-2 text-primary"></i>Common questions</h2>
+                <p class="fw-bold text-body mb-1">Is this data official?</p>
+                <p class="text-secondary small mb-3">The underlying data comes from CEE Kerala's official allotment PDFs. This site makes them searchable and readable — but always verify final results on <b>cee.kerala.gov.in</b>.</p>
+                <p class="fw-bold text-body mb-1">Is my rank prediction accurate?</p>
+                <p class="text-secondary small mb-3">It's a well-grounded estimate based on the official formula and 2026 trend data. Actual ranks depend on how everyone performs that year, so treat ranges as guidance.</p>
+                <p class="fw-bold text-body mb-1">Do cutoffs from last year guarantee my admission this year?</p>
+                <p class="text-secondary small mb-3">No — cutoffs move every year with competition, seats and difficulty. That's why the options tool shows Safe / Moderate / Ambitious instead of a single yes/no.</p>
+                <p class="fw-bold text-body mb-1">Does the site collect my personal data?</p>
+                <p class="text-secondary small mb-0">Nothing identifiable. Your theme choice and checklist progress stay on your own device, and the site only records anonymous page visits to improve itself.</p>
+            </div>
+        </div>
+
+        <div class="text-center mb-4 anim-in">
+            <a href="/" class="btn btn-lg btn-primary rounded-pill px-5 fw-bold shadow-sm"><i class="bi bi-rocket-takeoff me-2"></i>Start Using the Site</a>
+        </div>
+
+        <p class="text-center text-muted small mt-4"><i class="bi bi-shield-check me-1"></i> Based on official CEE allotment lists · Reference use only · Always verify with cee.kerala.gov.in</p>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script>
+        (function generateStars() {
+            const layer = document.getElementById('starsLayer');
+            if (!layer) return;
+            let html = '';
+            for (let i = 0; i < 70; i++) {
+                const size = Math.random() * 2 + 0.5;
+                const top = Math.random() * 100;
+                const left = Math.random() * 100;
+                const delay = Math.random() * 3;
+                const dur = 2 + Math.random() * 3;
+                html += '<span class="star" style="width:' + size + 'px;height:' + size + 'px;top:' + top + '%;left:' + left + '%;animation-delay:' + delay + 's;animation-duration:' + dur + 's"></span>';
+            }
+            layer.innerHTML = html;
+        })();
+
+        function sendTelemetry(action, searchData, clicked) {
+            try {
+                var payload = JSON.stringify({ action: action || 'Event', search_data: searchData || '', clicked: clicked || '', page: '/guide' });
+                if (navigator.sendBeacon) { navigator.sendBeacon('/api/telemetry', payload); }
+                else { fetch('/api/telemetry', { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: payload, keepalive: true }); }
+            } catch (e) {}
+        }
+
+        function applyTheme(theme) {
+            $('html').attr('data-bs-theme', theme);
+            if (theme === 'dark') {
+                $('#themeIcon').removeClass('bi-moon-stars-fill').addClass('bi-sun-fill');
+                $('#themeText').text('Light');
+            } else {
+                $('#themeIcon').removeClass('bi-sun-fill').addClass('bi-moon-stars-fill');
+                $('#themeText').text('Dark');
+            }
+        }
+
+        $(document).ready(function() {
+            applyTheme(localStorage.getItem('keam_ui_theme') || 'light');
+            sendTelemetry('Page Load', '', '');
+
+            $('#themeToggleBtn').on('click', function() {
+                var target = $('html').attr('data-bs-theme') === 'dark' ? 'light' : 'dark';
+                localStorage.setItem('keam_ui_theme', target);
+                applyTheme(target);
+            });
+
+            // Rotate chevron when a guide is opened/closed
+            $('details.tool-details').on('toggle', function() {
+                $(this).find('> summary i.bi-chevron-down').toggleClass('rotate-180', this.open);
+            });
+
+            // Open the guide you navigated to via a journey-card anchor, and scroll to it
+            function openGuideFromHash() {
+                var hash = location.hash;
+                if (!hash || !hash.startsWith('#tool-')) return;
+                var target = $(hash);
+                if (target.length && target.is('details')) {
+                    target.prop('open', true);
+                    setTimeout(function() {
+                        target[0].scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }, 60);
+                }
+            }
+            openGuideFromHash();
+            $(window).on('hashchange', openGuideFromHash);
+        });
+    </script>
+</body>
+</html>

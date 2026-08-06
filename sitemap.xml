@@ -6,6 +6,11 @@
     <priority>1.00</priority>
   </url>
   <url>
+    <loc>https://gavinjoseph.in/guide</loc>
+    <lastmod>2026-08-06</lastmod>
+    <priority>0.80</priority>
+  </url>
+  <url>
     <loc>https://gavinjoseph.in/options</loc>
     <lastmod>2026-08-06</lastmod>
     <priority>0.90</priority>
