@@ -2,13 +2,8 @@ from flask import Flask, render_template, request, jsonify, redirect, url_for, s
 from datetime import timedelta
 import sqlite3
 import os
-import re
-import csv
-import io
 import time
 import secrets
-from functools import wraps
-from pypdf import PdfReader
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', secrets.token_hex(32))

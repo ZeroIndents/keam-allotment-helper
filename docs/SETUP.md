@@ -16,8 +16,8 @@ python3 -m venv venv
 
 # 2. Build the database from official CEE allotment PDFs
 #    (the ~120 MB colleges_v2.db is intentionally NOT in the repo — it is
-#    generated data with student PII)
-./venv/bin/python offline_parser.py pdf_source/2026_Phase3.pdf
+#    generated data with student PII). Drop PDFs into pdf_source/ and run:
+./venv/bin/python offline_parser.py
 
 # 3. Run
 export DB_PATH="$(pwd)/colleges_v2.db"
@@ -45,11 +45,8 @@ The database is produced from **official CEE Kerala allotment PDFs** dropped in
 `pdf_source/`:
 
 ```bash
-# Single file
-./venv/bin/python offline_parser.py pdf_source/2026_Phase3.pdf
-
-# All PDFs in pdf_source/
-./venv/bin/python offline_parser.py --all
+# The parser takes NO arguments — it imports every PDF found in pdf_source/
+./venv/bin/python offline_parser.py
 ```
 
 The parser auto-detects the document type (digital table, flowing text, or
@@ -57,9 +54,9 @@ scanned/OCR), rebuilds the header from the PDF's own ruling lines, and
 normalizes college/course codes via the `KEAM_COLLEGES` / `KEAM_COURSES` maps
 in `app.py`. See `docs/DATA_PIPELINE.md`.
 
-**Ordering matters** for multi-phase years: import Phase 1 → Phase 2 → Phase 3
-so later phases overwrite earlier duplicates (dedup keys on
-`year + phase + appl_no`).
+**Ordering matters** for multi-phase years: name PDFs so they import Phase 1 →
+Phase 2 → Phase 3 (the filename is parsed for year + phase), so later phases
+overwrite earlier duplicates (dedup keys on `year + phase + appl_no`).
 
 ## 4. Production deployment (nginx + gunicorn + systemd)
 
@@ -85,7 +82,7 @@ Type=simple
 User=www-data
 Group=www-data
 WorkingDirectory=/var/www/college_project
-EnvironmentFile=/etc/college.env
+EnvironmentFile=/var/lib/college_project/college.env
 ExecStart=/var/www/college_project/venv/bin/gunicorn --workers 3 --bind 127.0.0.1:5000 app:app
 Restart=always
 RestartSec=3
@@ -99,7 +96,7 @@ systemctl daemon-reload && systemctl enable --now college
 systemctl status college
 ```
 
-### 4.3 Environment file — `/etc/college.env` (chmod 600, root-only)
+### 4.3 Environment file — `/var/lib/college_project/college.env` (chmod 600)
 
 ```bash
 SECRET_KEY=<random 64 hex chars>
@@ -108,7 +105,8 @@ FLASK_DEBUG=0
 ```
 
 ```bash
-sudo chmod 600 /etc/college.env
+sudo mkdir -p /var/lib/college_project
+sudo chmod 600 /var/lib/college_project/college.env
 ```
 
 ### 4.4 Nginx site — `/etc/nginx/sites-available/college`

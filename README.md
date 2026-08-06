@@ -36,9 +36,13 @@ export DB_PATH=/path/to/colleges_v2.db
 ### Building the database
 
 ```bash
-# Parse official CEE allotment PDFs into the SQLite DB:
-./venv/bin/python offline_parser.py pdf_source/2026_Phase3.pdf
+# Drop official CEE allotment PDFs into pdf_source/ and run:
+./venv/bin/python offline_parser.py
 ```
+
+The parser auto-detects each PDF's layout (digital table, flowing text, or
+scanned/OCR) and imports **all** PDFs found in `pdf_source/` — see
+[`docs/DATA_PIPELINE.md`](docs/DATA_PIPELINE.md).
 
 ## Documentation
 
