@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+<head>
+    <title>KEAM Counselling Guide | Timeline, Documents & Rules</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="KEAM counselling made simple: the allotment round timeline, the documents you must carry, and the CEE rules that save your seat.">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style>
+        :root { scroll-behavior: smooth; }
+        body { font-size: 14px; color: var(--bs-body-color); position: relative; min-height: 100vh; overflow-x: hidden; }
+        body {
+            background: linear-gradient(-45deg, #eef2ff, #e0f2fe, #f0fdfa, #faf5ff, #eff6ff);
+            background-size: 400% 400%;
+            animation: gradientShift 18s ease infinite;
+        }
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        [data-bs-theme="dark"] body {
+            background: linear-gradient(-45deg, #0a0e1a, #0f172a, #131c31, #1a1030, #0d1424);
+            background-size: 400% 400%;
+            animation: gradientShift 20s ease infinite;
+        }
+        .bg-blobs { position: fixed; inset: 0; z-index: -2; overflow: hidden; pointer-events: none; }
+        .blob { position: absolute; border-radius: 50%; filter: blur(70px); opacity: 0.5; animation: floatBlob 20s ease-in-out infinite; }
+        .blob-1 { width: 420px; height: 420px; background: radial-gradient(circle, #93c5fd, transparent 70%); top: -80px; left: -60px; }
+        .blob-2 { width: 360px; height: 360px; background: radial-gradient(circle, #a7f3d0, transparent 70%); top: 40%; right: -80px; animation-delay: -5s; }
+        .blob-3 { width: 400px; height: 400px; background: radial-gradient(circle, #ddd6fe, transparent 70%); bottom: -100px; left: 30%; animation-delay: -10s; }
+        @keyframes floatBlob {
+            0%,100% { transform: translate(0,0) scale(1); }
+            33% { transform: translate(40px,-30px) scale(1.1); }
+            66% { transform: translate(-30px,40px) scale(0.95); }
+        }
+        [data-bs-theme="dark"] .blob { opacity: 0.35; filter: blur(80px); }
+        [data-bs-theme="dark"] .blob-1 { background: radial-gradient(circle, #1e40af, transparent 70%); }
+        [data-bs-theme="dark"] .blob-2 { background: radial-gradient(circle, #065f46, transparent 70%); }
+        [data-bs-theme="dark"] .blob-3 { background: radial-gradient(circle, #5b21b6, transparent 70%); }
+        .stars { position: fixed; inset: 0; z-index: -1; pointer-events: none; opacity: 0; transition: opacity 0.6s; }
+        [data-bs-theme="dark"] .stars { opacity: 1; }
+        .star { position: absolute; background: #fff; border-radius: 50%; animation: twinkle 3s ease-in-out infinite; }
+        @keyframes twinkle { 0%,100% { opacity: 0.15; } 50% { opacity: 0.9; } }
+
+        .text-gradient { background: linear-gradient(90deg, #198754, #20c997); -webkit-background-clip: text; -webkit-text-fill-color: transparent; display: inline-block; }
+        [data-bs-theme="dark"] .text-gradient { background: linear-gradient(90deg, #6ee7b7, #34d399); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+        .card {
+            background: rgba(255,255,255,0.72) !important;
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid rgba(255,255,255,0.5) !important;
+            box-shadow: 0 8px 32px rgba(31,38,135,0.08) !important;
+        }
+        [data-bs-theme="dark"] .card { background: rgba(23,32,50,0.72) !important; border-color: #2b3a52 !important; }
+
+        .chip { font-size: 12px; font-weight: 700; padding: 6px 14px; border-radius: 999px; }
+        .anim-in { animation: animIn 0.6s cubic-bezier(0.22,1,0.36,1) both; }
+        @keyframes animIn { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Timeline */
+        .tl { position: relative; padding-left: 28px; }
+        .tl::before { content: ''; position: absolute; left: 9px; top: 6px; bottom: 6px; width: 2px; background: rgba(20,184,166,0.35); }
+        .tl-item { position: relative; padding-bottom: 22px; }
+        .tl-item:last-child { padding-bottom: 0; }
+        .tl-dot { position: absolute; left: -25px; top: 3px; width: 14px; height: 14px; border-radius: 50%; background: #14b8a6; border: 3px solid #fff; box-shadow: 0 0 0 2px rgba(20,184,166,0.4); }
+        [data-bs-theme="dark"] .tl-dot { border-color: #0f172a; }
+
+        .check-done { text-decoration: line-through; opacity: 0.6; }
+        .check-item input[type="checkbox"] { width: 20px; height: 20px; accent-color: #198754; cursor: pointer; }
+
+        #themeToggleBtn { transition: transform 0.4s ease; }
+        #themeToggleBtn:hover { transform: rotate(-8deg) scale(1.05); }
+
+        @media (max-width: 767.98px) {
+            .form-control, .form-select { font-size: 16px !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="bg-blobs">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+    </div>
+    <div class="stars" id="starsLayer"></div>
+
+    <div class="container mt-3 mt-md-4 mb-5" style="max-width: 860px;">
+        <div class="d-flex justify-content-between align-items-start mb-3">
+            <a href="/" class="btn btn-sm btn-outline-secondary rounded-pill"><i class="bi bi-arrow-left me-1"></i> Back to Allotment Helper</a>
+            <button id="themeToggleBtn" class="btn btn-outline-secondary px-3 rounded-pill shadow-sm">
+                <i id="themeIcon" class="bi bi-moon-stars-fill me-2"></i><span id="themeText">Dark</span>
+            </button>
+        </div>
+
+        <div class="text-center mb-4 anim-in">
+            <h1 class="fw-bold mb-2" style="font-size: 2rem;">
+                <i class="bi bi-calendar2-check me-2 text-success"></i><span class="text-gradient">KEAM Counselling Guide</span>
+            </h1>
+            <p class="text-secondary mx-auto" style="max-width: 640px; line-height: 1.6;">
+                What happens after the rank list, in plain steps — plus the documents you'll need and the rules that protect your seat.
+            </p>
+        </div>
+
+        <!-- Timeline -->
+        <div class="card shadow-sm border-0 rounded-4 mb-4 p-4 p-md-5 anim-in">
+            <h2 class="h6 fw-bold mb-3"><i class="bi bi-signpost-2 me-2 text-success"></i>The allotment journey, step by step</h2>
+            <p class="text-muted small mb-4">Exact dates change every year — always check <b>cee.kerala.gov.in</b> for the current schedule. This is the shape of the process.</p>
+            <div class="tl">
+                <div class="tl-item">
+                    <span class="tl-dot"></span>
+                    <div class="fw-bold">1 · Rank list published</div>
+                    <div class="text-muted small">CEE publishes the State Merit rank list. Check your rank and category (SM / EZ / MU / SC …).</div>
+                </div>
+                <div class="tl-item">
+                    <span class="tl-dot"></span>
+                    <div class="fw-bold">2 · Option registration opens</div>
+                    <div class="text-muted small">Log in to the candidate portal and fill your <b>choice list</b> — every college + course combo you'd accept, in order of preference.</div>
+                </div>
+                <div class="tl-item">
+                    <span class="tl-dot"></span>
+                    <div class="fw-bold">3 · Confirm options before each round</div>
+                    <div class="text-muted small">Before Round 2 and Round 3 you must <b>re-confirm</b> your options on the portal, or you're out of that round.</div>
+                </div>
+                <div class="tl-item">
+                    <span class="tl-dot"></span>
+                    <div class="fw-bold">4 · Round 1 allotment → report &amp; pay</div>
+                    <div class="text-muted small">If allotted, <b>report to the college and pay fees within the deadline</b>. Missing it cancels the seat.</div>
+                </div>
+                <div class="tl-item">
+                    <span class="tl-dot"></span>
+                    <div class="fw-bold">5 · Rounds 2 &amp; 3 — possible upgrades</div>
+                    <div class="text-muted small">Participating in later rounds can <b>upgrade you to a better option</b>. Your lower options are dropped automatically once you're allotted.</div>
+                </div>
+                <div class="tl-item">
+                    <span class="tl-dot"></span>
+                    <div class="fw-bold">6 · Provisional &amp; mop-up rounds</div>
+                    <div class="text-muted small">Final rounds fill the remaining seats. After this, admission is confirmed — complete reporting and document verification.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Document checklist -->
+        <div class="card shadow-sm border-0 rounded-4 mb-4 p-4 p-md-5 anim-in">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+                <h2 class="h6 fw-bold mb-0"><i class="bi bi-folder2-open me-2 text-primary"></i>Document checklist</h2>
+                <span class="chip bg-success-subtle text-success border border-success-subtle" id="checkCount">0 / 0 ready</span>
+            </div>
+            <p class="text-muted small mb-3">Tick what you have — your progress is saved on this device. Carry originals <b>and</b> photocopies for reporting.</p>
+            <div id="checkList" class="row g-2"></div>
+            <button id="checkReset" class="btn btn-sm btn-outline-secondary rounded-pill mt-3"><i class="bi bi-arrow-counterclockwise me-1"></i>Reset checklist</button>
+        </div>
+
+        <!-- Rules -->
+        <div class="card shadow-sm border-0 rounded-4 mb-4 p-4 p-md-5 anim-in">
+            <h2 class="h6 fw-bold mb-3"><i class="bi bi-shield-exclamation me-2 text-danger"></i>Rules that save your seat</h2>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <div class="border border-warning-subtle bg-warning-subtle rounded-3 p-3 h-100">
+                        <div class="fw-bold text-warning-emphasis mb-1"><i class="bi bi-arrow-down-up me-1"></i>Order matters</div>
+                        <p class="small text-secondary mb-0">You get the <b>highest option you qualify for</b>. Options below your allotment are wiped automatically — always list what you truly want, first.</p>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="border border-danger-subtle bg-danger-subtle rounded-3 p-3 h-100">
+                        <div class="fw-bold text-danger-emphasis mb-1"><i class="bi bi-clock-history me-1"></i>Deadlines are final</div>
+                        <p class="small text-secondary mb-0">Fee payment + college reporting deadlines are strict. Missing one <b>cancels your seat</b> and removes you from later rounds.</p>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="border border-primary-subtle bg-primary-subtle rounded-3 p-3 h-100">
+                        <div class="fw-bold text-primary-emphasis mb-1"><i class="bi bi-arrow-repeat me-1"></i>Re-confirm every round</div>
+                        <p class="small text-secondary mb-0">Participating in Round 2/3 requires you to <b>confirm your options again</b> on the portal before each round's deadline.</p>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="border border-success-subtle bg-success-subtle rounded-3 p-3 h-100">
+                        <div class="fw-bold text-success-emphasis mb-1"><i class="bi bi-graph-up-arrow me-1"></i>Upgrades are real</div>
+                        <p class="small text-secondary mb-0">Cutoffs usually relax in later rounds. Keeping your list live means you can <b>move up to a better college</b> automatically.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <p class="text-center text-muted small mt-4"><i class="bi bi-shield-check me-1"></i> Guide only — official rules &amp; dates are at <b>cee.kerala.gov.in</b></p>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script>
+        (function generateStars() {
+            const layer = document.getElementById('starsLayer');
+            if (!layer) return;
+            let html = '';
+            for (let i = 0; i < 70; i++) {
+                const size = Math.random() * 2 + 0.5;
+                const top = Math.random() * 100;
+                const left = Math.random() * 100;
+                const delay = Math.random() * 3;
+                const dur = 2 + Math.random() * 3;
+                html += '<span class="star" style="width:' + size + 'px;height:' + size + 'px;top:' + top + '%;left:' + left + '%;animation-delay:' + delay + 's;animation-duration:' + dur + 's"></span>';
+            }
+            layer.innerHTML = html;
+        })();
+
+        function sendTelemetry(action, searchData, clicked) {
+            try {
+                var payload = JSON.stringify({ action: action || 'Event', search_data: searchData || '', clicked: clicked || '', page: '/counselling' });
+                if (navigator.sendBeacon) { navigator.sendBeacon('/api/telemetry', payload); }
+                else { fetch('/api/telemetry', { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: payload, keepalive: true }); }
+            } catch (e) {}
+        }
+
+        function applyTheme(theme) {
+            $('html').attr('data-bs-theme', theme);
+            if (theme === 'dark') {
+                $('#themeIcon').removeClass('bi-moon-stars-fill').addClass('bi-sun-fill');
+                $('#themeText').text('Light');
+            } else {
+                $('#themeIcon').removeClass('bi-sun-fill').addClass('bi-moon-stars-fill');
+                $('#themeText').text('Dark');
+            }
+        }
+
+        var CHECK_KEY = 'keam_checklist_v1';
+        var ITEMS = [
+            'Allotment memo (printed from the portal)',
+            'SSLC (Class 10) mark sheet + certificate',
+            'Plus Two / Class 12 mark sheet + certificate',
+            'Transfer certificate (TC) from school',
+            'Conduct / character certificate',
+            'Nativity certificate (Kerala origin)',
+            'Community certificate (if reserved category)',
+            'Non-creamy layer (NCL) certificate, if applicable',
+            'Income certificate (for EWS quota)',
+            'Fee payment receipt',
+            'Aadhaar card + a few passport-size photos',
+            'Migration certificate (if from another board / state)'
+        ];
+
+        function loadChecks() {
+            try { return JSON.parse(localStorage.getItem(CHECK_KEY) || '{}'); } catch (e) { return {}; }
+        }
+        function saveChecks(c) {
+            localStorage.setItem(CHECK_KEY, JSON.stringify(c));
+        }
+        function renderChecks() {
+            var state = loadChecks();
+            $('#checkList').empty();
+            ITEMS.forEach(function(item, i) {
+                var done = !!state[i];
+                $('#checkList').append(
+                    '<div class="col-12 col-md-6">' +
+                    '<label class="check-item d-flex align-items-start gap-2 p-2 rounded-3 ' + (done ? 'check-done' : '') + '" style="cursor:pointer;">' +
+                    '<input type="checkbox" class="mt-1 flex-shrink-0" data-i="' + i + '" ' + (done ? 'checked' : '') + '>' +
+                    '<span class="small">' + esc(item) + '</span>' +
+                    '</label></div>'
+                );
+            });
+            updateCount();
+        }
+        function updateCount() {
+            var state = loadChecks();
+            var done = ITEMS.filter(function(_, i) { return !!state[i]; }).length;
+            $('#checkCount').text(done + ' / ' + ITEMS.length + ' ready');
+        }
+
+        function esc(s) {
+            return String(s == null ? '' : s).replace(/[&<>"']/g, function(m) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]; });
+        }
+
+        $(document).ready(function() {
+            applyTheme(localStorage.getItem('keam_ui_theme') || 'light');
+            sendTelemetry('Page Load', '', '');
+            $('#themeToggleBtn').on('click', function() {
+                var target = $('html').attr('data-bs-theme') === 'dark' ? 'light' : 'dark';
+                localStorage.setItem('keam_ui_theme', target);
+                applyTheme(target);
+            });
+
+            renderChecks();
+
+            $('#checkList').on('change', 'input[type="checkbox"]', function() {
+                var state = loadChecks();
+                state[$(this).data('i')] = $(this).prop('checked');
+                saveChecks(state);
+                $(this).closest('label').toggleClass('check-done', $(this).prop('checked'));
+                updateCount();
+            });
+            $('#checkReset').on('click', function() {
+                localStorage.removeItem(CHECK_KEY);
+                renderChecks();
+            });
+        });
+    </script>
+</body>
+</html>

@@ -139,12 +139,18 @@
                 <form id="predictorForm">
                     <div class="row g-4">
                         <div class="col-md-6">
-                            <label class="form-label fw-bold small text-uppercase text-muted" for="keamScore">KEAM Entrance Score</label>
-                            <div class="input-group">
-                                <input type="number" class="form-control form-control-lg bg-success-subtle border-success text-success fw-bold" id="keamScore" placeholder="e.g. 210" min="0" max="300" step="0.5" required>
-                                <span class="input-group-text bg-body">/ 300</span>
+                            <label class="form-label fw-bold small text-uppercase text-muted">KEAM Entrance Score</label>
+                            <div class="btn-group w-100 mb-2" role="group" aria-label="Entrance score type">
+                                <input type="radio" class="btn-check" name="keamMode" id="modeRaw" value="raw" checked>
+                                <label class="btn btn-outline-success btn-sm" for="modeRaw"><i class="bi bi-file-earmark-text me-1"></i>Raw score / 600</label>
+                                <input type="radio" class="btn-check" name="keamMode" id="modeNorm" value="norm">
+                                <label class="btn btn-outline-success btn-sm" for="modeNorm"><i class="bi bi-sliders me-1"></i>Normalized / 300</label>
                             </div>
-                            <div class="form-text">Your normalized entrance exam mark.</div>
+                            <div class="input-group">
+                                <input type="number" class="form-control form-control-lg bg-success-subtle border-success text-success fw-bold" id="keamScore" placeholder="e.g. 420" min="0" max="600" step="0.5" required>
+                                <span class="input-group-text bg-body" id="keamMaxText">/ 600</span>
+                            </div>
+                            <div class="form-text" id="keamHint">Enter your <b>raw</b> entrance score (out of 600). We halve it as an estimate of the normalized mark CEE uses.</div>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-bold small text-uppercase text-muted" for="boardSelect">Class 12 Board</label>
@@ -198,7 +204,7 @@
             <div class="chip bg-success-subtle text-success border border-success-subtle mb-3">🎯 Your prediction</div>
             <h5 class="text-muted fw-bold text-uppercase mb-1">Total KEAM Index</h5>
             <div class="score-display text-dark"><span id="finalScoreText">0</span><span class="fs-4 text-muted"> / 600</span></div>
-            <p class="text-secondary small mb-4">Board Normalization: <strong id="boardScoreText">0</strong> + KEAM Score: <strong id="keamScoreEcho">0</strong></p>
+            <p class="text-secondary small mb-4">Board Normalization: <strong id="boardScoreText">0</strong> + KEAM (normalized): <strong id="keamScoreEcho">0</strong></p>
 
             <div class="bg-success-subtle p-4 rounded-3">
                 <h6 class="text-success fw-bold text-uppercase mb-2">Estimated State Merit Rank Bracket</h6>
@@ -326,6 +332,10 @@
             return 'Keep improving — but remember cutoffs vary by college and branch.';
         }
 
+        function keamMode() {
+            return ($('input[name="keamMode"]:checked').val() || 'raw') === 'raw' ? 'raw' : 'norm';
+        }
+
         function compute() {
             var keam = parseFloat($('#keamScore').val());
             var m = parseFloat($('#mathMarks').val());
@@ -336,8 +346,9 @@
             var pPct = (p / maxMarks) * 100;
             var cPct = (c / maxMarks) * 100;
             var boardScore = (mPct * 1.5) + (pPct * 0.9) + (cPct * 0.6);
-            var totalIndex = keam + boardScore;
-            return { keam: keam, m: m, p: p, c: c, boardScore: boardScore, totalIndex: totalIndex, bracket: bracketFor(totalIndex) };
+            var keamIndex = keamMode() === 'raw' ? keam / 2 : keam;
+            var totalIndex = keamIndex + boardScore;
+            return { keam: keam, keamIndex: keamIndex, m: m, p: p, c: c, boardScore: boardScore, totalIndex: totalIndex, bracket: bracketFor(totalIndex) };
         }
 
         function renderCompare(bracket) {
@@ -410,6 +421,21 @@
                 $('#maxMarkText').text(maxMarks);
             }).trigger('change');
 
+            $('input[name="keamMode"]').on('change', function() {
+                var raw = keamMode() === 'raw';
+                $('#keamScore').attr('max', raw ? 600 : 300).attr('placeholder', raw ? 'e.g. 420' : 'e.g. 210');
+                $('#keamMaxText').text(raw ? '/ 600' : '/ 300');
+                $('#keamHint').html(raw
+                    ? 'Enter your <b>raw</b> entrance score (out of 600). We halve it as an <b>approximate</b> normalized mark.'
+                    : 'Enter your <b>normalized</b> entrance mark (out of 300), if you already know it from CEE.');
+                // Keep the typed value valid when switching modes (halve/double it)
+                var v = parseFloat($('#keamScore').val());
+                if (!isNaN(v)) {
+                    $('#keamScore').val(raw ? (Math.round(v * 2 * 2) / 2) : (Math.round(v / 2 * 2) / 2));
+                }
+                liveUpdate();
+            });
+
             // Live meter preview
             function liveUpdate() {
                 var r = compute();
@@ -427,14 +453,14 @@
 
                 animateCount(document.getElementById('finalScoreText'), r.totalIndex, 1);
                 $('#boardScoreText').text(r.boardScore.toFixed(2));
-                $('#keamScoreEcho').text(r.keam.toFixed(2));
+                $('#keamScoreEcho').text(r.keamIndex.toFixed(2));
 
                 var b = r.bracket;
                 $('#rankText').text(b.text).removeClass('text-success text-primary text-info text-warning text-danger').addClass(b.cls);
                 $('#rankMeaning').text('Meaning: ' + meaningFor(b));
                 $('#resultBox').slideDown();
                 renderCompare(b);
-                sendTelemetry('Predict', JSON.stringify({ keam_score: r.keam, board: $('#boardSelect').val(), math: r.m, physics: r.p, chemistry: r.c }), 'predictor_form');
+                sendTelemetry('Predict', JSON.stringify({ keam_score: r.keam, mode: keamMode(), board: $('#boardSelect').val(), math: r.m, physics: r.p, chemistry: r.c }), 'predictor_form');
                 $('html, body').animate({ scrollTop: $('#resultBox').offset().top - 50 }, 500);
             });
 

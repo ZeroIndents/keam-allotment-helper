@@ -204,6 +204,14 @@ def rank_predictor():
 def photo_resizer():
     return render_template('resizer.html')
 
+@app.route('/options')
+def options_portal():
+    return render_template('options.html')
+
+@app.route('/counselling')
+def counselling_portal():
+    return render_template('counselling.html')
+
 
 @app.route('/trends')
 def trends_portal():
@@ -679,6 +687,85 @@ def get_rank_summary():
         query += " GROUP BY candidate_category ORDER BY start_rank ASC"
         cursor.execute(query, params)
         return jsonify([{"category": row['candidate_category'], "start": row['start_rank'], "end": row['end_rank']} for row in cursor.fetchall()])
+    except Exception:
+        return jsonify({"error": "internal_error"}), 500
+    finally:
+        if conn: conn.close()
+
+
+@app.route('/api/options')
+def api_options():
+    """Rank → college/course options tagged Safe / Moderate / Ambitious."""
+    try:
+        rank = int(request.args.get('rank', 0))
+    except (TypeError, ValueError):
+        return jsonify({"error": "Invalid rank"}), 400
+    if rank <= 0:
+        return jsonify({"error": "Please enter a valid rank."}), 400
+    year = request.args.get('year', '').strip()
+    category = (request.args.get('category', 'SM').strip() or 'SM')
+    course = request.args.get('course', '').strip()
+    phase = (request.args.get('phase', 'Phase3').strip() or 'Phase3')
+    try:
+        limit = min(max(int(request.args.get('limit', 40)), 1), 100)
+    except (TypeError, ValueError):
+        limit = 40
+
+    conn = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        q = ("SELECT college_name, course_name, MIN(rank) AS opening, MAX(rank) AS closing "
+             "FROM colleges WHERE rank > 0")
+        params = []
+        if year:
+            q += " AND year = ?"
+            params.append(int(year))
+        if phase:
+            q += " AND phase = ?"
+            params.append(phase)
+        if category == 'SM':
+            q += " AND seat_type = 'SM'"
+        else:
+            q += " AND candidate_category = ?"
+            params.append(category)
+        if course:
+            q += " AND UPPER(course_name) LIKE UPPER(?)"
+            params.append(f"%{course}%")
+        q += " GROUP BY college_name, course_name"
+        cursor.execute(q, params)
+
+        floor = rank * 0.85
+        results = []
+        for row in cursor.fetchall():
+            closing = row['closing']
+            opening = row['opening']
+            if not closing or not opening:
+                continue
+            if closing < floor:
+                continue
+            if closing >= rank * 1.25:
+                verdict = 'safe'
+            elif closing >= rank:
+                verdict = 'moderate'
+            else:
+                verdict = 'ambitious'
+            results.append({
+                'college': row['college_name'],
+                'course': row['course_name'],
+                'opening': opening,
+                'closing': closing,
+                'verdict': verdict
+            })
+        results.sort(key=lambda r: (r['opening'], r['closing']))
+        results = results[:limit]
+        counts = {'safe': 0, 'moderate': 0, 'ambitious': 0}
+        for r in results:
+            counts[r['verdict']] += 1
+        return jsonify({
+            'rank': rank, 'year': year or None, 'category': category, 'phase': phase,
+            'counts': counts, 'total': len(results), 'options': results
+        })
     except Exception:
         return jsonify({"error": "internal_error"}), 500
     finally:
