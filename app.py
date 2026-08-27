@@ -1258,13 +1258,41 @@ def api_blogs_create():
         'title': data['title'],
         'content': data['content'],
         'tags': data.get('tags', []),
-        'read_time': data.get('read_time', '3 min read'),
+        'read_time': data.get('read_time', _auto_read_time(data['content'])),
         'created_at': datetime.now().isoformat(),
     }
     blogs = _load_blogs()
     blogs.append(blog)
     _save_blogs(blogs)
     return jsonify(blog), 201
+
+def _auto_read_time(content):
+    """Estimate read time from word count (~200 wpm)."""
+    words = len(content.split())
+    mins = max(1, round(words / 200))
+    return f"{mins} min read"
+
+
+@app.route('/api/blogs/<blog_id>', methods=['PUT'])
+def api_blogs_update(blog_id):
+    token = request.headers.get('Authorization', '').replace('Bearer ', '')
+    if token != BLOG_ADMIN_TOKEN:
+        return jsonify({'error': 'Unauthorized'}), 401
+    data = request.get_json()
+    if not data or not data.get('title') or not data.get('content'):
+        return jsonify({'error': 'title and content required'}), 400
+    blogs = _load_blogs()
+    for b in blogs:
+        if b.get('id') == blog_id:
+            b['title'] = data['title']
+            b['content'] = data['content']
+            b['tags'] = data.get('tags', b.get('tags', []))
+            b['read_time'] = data.get('read_time', _auto_read_time(data['content']))
+            b['updated_at'] = datetime.now().isoformat()
+            _save_blogs(blogs)
+            return jsonify(b)
+    return jsonify({'error': 'Not found'}), 404
+
 
 @app.route('/api/blogs/<blog_id>', methods=['DELETE'])
 def api_blogs_delete(blog_id):
