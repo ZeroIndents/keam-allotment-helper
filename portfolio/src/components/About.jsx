@@ -1,19 +1,15 @@
 import React, { useRef, useState, useEffect } from 'react';
 
 const SKILLS = [
-  { category: 'Languages', items: ['Python', 'JavaScript', 'TypeScript', 'SQL', 'HTML/CSS'] },
-  { category: 'Frameworks', items: ['Flask', 'React', 'Node.js', 'Bootstrap', 'Tailwind CSS'] },
-  { category: 'Databases', items: ['SQLite', 'PostgreSQL', 'MongoDB'] },
-  { category: 'Tools', items: ['Git', 'Docker', 'Nginx', 'Linux', 'Vim'] },
-  { category: 'Concepts', items: ['REST APIs', 'Data Pipelines', 'PDF Parsing', 'OCR', 'Web Scraping'] },
+  { category: 'Languages', items: ['Python', 'JavaScript', 'SQL', 'HTML/CSS', 'Bash'] },
+  { category: 'Web & Frameworks', items: ['Flask', 'React', 'Tailwind CSS', 'Bootstrap', 'Nginx'] },
+  { category: 'IoT & Hardware', items: ['ESP32', 'Arduino', 'Home Assistant', 'Frigate NVR', 'YOLOv9'] },
+  { category: 'Virtualization', items: ['Proxmox VE', 'Docker', 'Linux', 'VMs', 'LXC Containers'] },
+  { category: 'Data & Backend', items: ['SQLite', 'PDF Parsing', 'REST APIs', 'Data Pipelines', 'Web Scraping'] },
+  { category: 'Tools', items: ['Git', 'Vim', 'Cloudflare', 'Gunicorn', 'systemd'] },
 ];
 
-const STATS = [
-  { value: '3+', label: 'Years Coding' },
-  { value: '10+', label: 'Projects Built' },
-  { value: '290K+', label: 'Data Rows Processed' },
-  { value: '142', label: 'Colleges Indexed' },
-];
+
 
 export default function About() {
   const sectionRef = useRef(null);
@@ -51,43 +47,20 @@ export default function About() {
             isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
           }`}
         >
-          <div className="grid lg:grid-cols-3 gap-10 items-start">
-            <div className="lg:col-span-2 space-y-5">
+          <div className="space-y-5">
               <p className="text-gray-300 text-lg leading-relaxed">
-                I'm a developer and engineer passionate about building tools that solve
-                real problems. My work spans full-stack web development, data engineering,
-                and creating applications that make complex information accessible.
+                I'm <span className="text-white font-semibold">Gavin Joseph</span>, an engineering student at <span className="text-galaxy-300 font-semibold">Federal Institute of Science and Technology (FISAT)</span>, Kerala, studying <span className="text-galaxy-300 font-semibold">Electrical & Electronics Engineering</span>. I build things — from full-stack web apps to IoT devices that run in the real world.
               </p>
               <p className="text-gray-400 leading-relaxed">
-                My flagship project, the <span className="text-galaxy-300 font-semibold">KEAM Allotment Helper</span>,
-                helps thousands of engineering aspirants in Kerala navigate the college admission
-                process. It parses official CEE PDF documents into a searchable database and
-                provides intelligent predictions, cutoff analysis, and migration tracking.
+                I run a <span className="text-galaxy-300 font-semibold">Proxmox virtualization lab</span> at home with <span className="text-galaxy-300 font-semibold">Home Assistant</span> powering my smart home, <span className="text-galaxy-300 font-semibold">Frigate NVR</span> with custom-trained <span className="text-galaxy-300 font-semibold">YOLOv9 models</span> for real-time object detection, and various <span className="text-galaxy-300 font-semibold">ESP32-based IoT devices</span> I designed and built myself — including an industrially tested water level sensor and an ultrasonic dog repeller.
               </p>
               <p className="text-gray-400 leading-relaxed">
-                I believe in building things that matter — tools that are fast, reliable, and
-                genuinely useful. Every project I take on is an opportunity to learn something
-                new and push the boundaries of what's possible.
+                My flagship project, the <span className="text-galaxy-300 font-semibold">KEAM Allotment Helper</span>, helps thousands of engineering aspirants in Kerala navigate the college admission process. It parses 290K+ official CEE PDF documents into a searchable database with rank prediction, cutoff analysis, and migration tracking.
+              </p>
+              <p className="text-gray-400 leading-relaxed">
+                I believe in building things that are fast, reliable, and genuinely useful. Whether it's a web dashboard, an IoT sensor, or a Proxmox VM — if it solves a real problem, I'm interested.
               </p>
             </div>
-
-            {/* Stats */}
-            <div className="grid grid-cols-2 gap-4">
-              {STATS.map((stat, i) => (
-                <div
-                  key={stat.label}
-                  className="glass rounded-xl p-4 text-center"
-                >
-                  <div className="text-2xl font-black text-gradient mb-1">
-                    {stat.value}
-                  </div>
-                  <div className="text-[11px] text-gray-500 font-medium uppercase tracking-wider">
-                    {stat.label}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
         </div>
 
         {/* Skills */}

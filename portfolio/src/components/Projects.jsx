@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 
-const GITHUB_USERNAME = 'gavinjoseph';
+const GITHUB_USERNAME = 'ZeroIndents';
 
 const LANGUAGE_COLORS = {
   Python: '#3572A5',
@@ -14,15 +14,64 @@ const LANGUAGE_COLORS = {
   Makefile: '#427819',
 };
 
+const FEATURED_PROJECTS = [
+  {
+    id: 'keam-helper',
+    name: 'KEAM Allotment Helper & Predictor',
+    description: 'Full-stack tool parsing 290K+ official CEE Kerala allotment rows into a searchable dashboard with rank prediction, cutoff analytics, and migration tracking.',
+    language: 'Python',
+    stargazers_count: 0,
+    forks_count: 0,
+    topics: ['flask', 'sqlite', 'keam', 'data-pipeline', 'predictor'],
+    html_url: 'https://github.com/ZeroIndents/keam-allotment-helper',
+    homepage: '/keam/',
+    featured: true,
+  },
+  {
+    id: 'kronos-market-predictor',
+    name: 'Kronos AI Market Predictor',
+    description: 'CPU-only live AI chart terminal for NSE markets. Kronos zero-shot forecasting (Tsinghua, AAAI 2026) with Angel One SmartAPI live ticks. No GPU required.',
+    language: 'Python',
+    stargazers_count: 0,
+    forks_count: 0,
+    topics: ['ai', 'finance', 'nse', 'kronos', 'cpu-only'],
+    html_url: 'https://github.com/ZeroIndents/Angel-API-Kronos-Market-Predictor',
+    homepage: null,
+    featured: true,
+  },
+  {
+    id: 'apple-music-downloader',
+    name: 'AppleMusic-Song-Downloader',
+    description: 'Download lossless ALAC, AAC 256kbps, or Dolby Atmos from your Apple Music subscription into a personal library. Web app + CLI with FLAC conversion.',
+    language: 'Python',
+    stargazers_count: 5,
+    forks_count: 0,
+    topics: ['apple-music', 'downloader', 'alac', 'flac'],
+    html_url: 'https://github.com/ZeroIndents/AppleMusic-Song-Downloader',
+    homepage: null,
+    featured: true,
+  },
+];
+
 export default function Projects({ onSelectProject }) {
   const [repos, setRepos] = useState([]);
+  const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
   const sectionRef = useRef(null);
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    fetch(`https://api.github.com/users/${GITHUB_USERNAME}/repos?sort=updated&per_page=30`)
+    // Fetch profile stats
+    fetch(`/api/github/users/${GITHUB_USERNAME}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data && !data.message) setProfile(data);
+      })
+      .catch(() => {});
+
+    // Fetch all non-fork repos (forks auto-appear once complete)
+    fetch(`/api/github/users/${GITHUB_USERNAME}/repos?sort=updated&per_page=100`)
       .then((res) => res.json())
       .then((data) => {
         if (Array.isArray(data)) {
@@ -44,9 +93,20 @@ export default function Projects({ onSelectProject }) {
     return () => observer.disconnect();
   }, []);
 
-  const languages = ['all', ...new Set(repos.map((r) => r.language).filter(Boolean))];
+  // Merge featured + API repos, dedup by name
+  const allRepos = [...FEATURED_PROJECTS];
+  repos.forEach((r) => {
+    if (!allRepos.find((p) => p.name === r.name)) {
+      allRepos.push(r);
+    }
+  });
 
-  const filtered = filter === 'all' ? repos : repos.filter((r) => r.language === filter);
+  const totalStars = allRepos.reduce((sum, r) => sum + (r.stargazers_count || 0), 0);
+  const languages = ['all', ...new Set(allRepos.map((r) => r.language).filter(Boolean))];
+
+  const filtered = filter === 'all'
+    ? allRepos
+    : allRepos.filter((r) => r.language === filter);
 
   return (
     <section id="projects" ref={sectionRef} className="relative py-32 px-6">
@@ -65,6 +125,32 @@ export default function Projects({ onSelectProject }) {
             Open-source work and experiments — all available on GitHub.
           </p>
         </div>
+
+        {/* Live GitHub Profile Stats */}
+        {profile && (
+          <div
+            className={`grid grid-cols-2 sm:grid-cols-4 gap-4 mb-12 transition-all duration-700 delay-100 ${
+              isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+            }`}
+          >
+            <div className="glass-card p-4 text-center">
+              <div className="text-2xl font-black text-gradient">{profile.public_repos}</div>
+              <div className="text-[11px] text-gray-500 font-medium uppercase tracking-wider mt-1">Public Repos</div>
+            </div>
+            <div className="glass-card p-4 text-center">
+              <div className="text-2xl font-black text-gradient">⭐ {totalStars}</div>
+              <div className="text-[11px] text-gray-500 font-medium uppercase tracking-wider mt-1">Total Stars</div>
+            </div>
+            <div className="glass-card p-4 text-center">
+              <div className="text-2xl font-black text-gradient">{profile.followers}</div>
+              <div className="text-[11px] text-gray-500 font-medium uppercase tracking-wider mt-1">Followers</div>
+            </div>
+            <div className="glass-card p-4 text-center">
+              <div className="text-2xl font-black text-gradient">{profile.following}</div>
+              <div className="text-[11px] text-gray-500 font-medium uppercase tracking-wider mt-1">Following</div>
+            </div>
+          </div>
+        )}
 
         {/* Language filter pills */}
         <div
@@ -112,7 +198,7 @@ export default function Projects({ onSelectProject }) {
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {filtered.map((repo, i) => (
               <ProjectCard
-                key={repo.id}
+                key={repo.id || repo.name}
                 repo={repo}
                 index={i}
                 isVisible={isVisible}
@@ -128,7 +214,7 @@ export default function Projects({ onSelectProject }) {
           </div>
         )}
 
-        {!loading && repos.length > 0 && (
+        {!loading && (
           <div
             className={`text-center mt-12 transition-all duration-700 delay-500 ${
               isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
@@ -159,9 +245,16 @@ function ProjectCard({ repo, index, isVisible, onClick }) {
       onClick={onClick}
     >
       <div className="flex items-start justify-between mb-3">
-        <h3 className="text-base font-bold text-white group-hover:text-galaxy-300 transition-colors truncate pr-2">
-          {repo.name}
-        </h3>
+        <div className="flex items-center gap-2 min-w-0">
+          <h3 className="text-base font-bold text-white group-hover:text-galaxy-300 transition-colors truncate">
+            {repo.name}
+          </h3>
+          {repo.featured && (
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-galaxy-500/20 text-galaxy-300 border border-galaxy-500/30 whitespace-nowrap">
+              ⭐ Featured
+            </span>
+          )}
+        </div>
         <svg
           viewBox="0 0 24 24"
           fill="none"

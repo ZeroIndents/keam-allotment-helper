@@ -3,7 +3,7 @@ import React, { useRef, useState, useEffect } from 'react';
 const LINKS = [
   {
     name: 'GitHub',
-    url: 'https://github.com/gavinjoseph',
+    url: 'https://github.com/ZeroIndents',
     description: 'Check out my code and open-source work',
     icon: (
       <svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">
@@ -14,7 +14,7 @@ const LINKS = [
   },
   {
     name: 'LinkedIn',
-    url: 'https://linkedin.com/in/gavinjoseph',
+    url: 'https://www.linkedin.com/in/gavin-joseph-792a433a8/',
     description: 'Connect with me professionally',
     icon: (
       <svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">
@@ -25,7 +25,7 @@ const LINKS = [
   },
   {
     name: 'Instagram',
-    url: 'https://instagram.com/gavinjoseph',
+    url: 'https://www.instagram.com/gavin._.joseph/',
     description: 'Follow me for updates and behind-the-scenes',
     icon: (
       <svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">
@@ -107,7 +107,7 @@ export default function Contact() {
                 I'd love to hear about it. Let's build something great together.
               </p>
               <a
-                href="mailto:hello@gavinjoseph.in"
+                href="mailto:gavinkalloor@gmail.com"
                 className="btn-primary text-base"
               >
                 ✉️ Say Hello

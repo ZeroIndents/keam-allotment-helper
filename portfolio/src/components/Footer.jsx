@@ -15,7 +15,7 @@ export default function Footer() {
 
         <div className="flex items-center gap-6">
           <a
-            href="https://github.com/gavinjoseph"
+            href="https://github.com/ZeroIndents"
             target="_blank"
             rel="noopener noreferrer"
             className="text-gray-500 hover:text-white transition-colors"
@@ -25,7 +25,7 @@ export default function Footer() {
             </svg>
           </a>
           <a
-            href="https://linkedin.com/in/gavinjoseph"
+            href="https://www.linkedin.com/in/gavin-joseph-792a433a8/"
             target="_blank"
             rel="noopener noreferrer"
             className="text-gray-500 hover:text-white transition-colors"
@@ -35,7 +35,7 @@ export default function Footer() {
             </svg>
           </a>
           <a
-            href="https://instagram.com/gavinjoseph"
+            href="https://www.instagram.com/gavin._.joseph/"
             target="_blank"
             rel="noopener noreferrer"
             className="text-gray-500 hover:text-white transition-colors"

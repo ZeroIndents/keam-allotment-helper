@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-bs-theme="light">
+<html lang="en" data-bs-theme="dark">
 <head>
     <title>Advanced Exam Document Toolkit | KEAM, JEE, NEET</title>
     <meta name="description" content="Interactive browser-side tools to crop, pan, resize, and compress passport photos, signatures, and certificates for engineering and medical admissions.">
@@ -280,7 +280,7 @@
         }
 
         $(document).ready(function() {
-            $('html').attr('data-bs-theme', localStorage.getItem('keam_ui_theme') || 'light');
+            $('html').attr('data-bs-theme', localStorage.getItem('keam_ui_theme') || 'dark');
             sendTelemetry('Page Load', '', '');
 
             let croppers = { photo: null, sig: null, imgPdf: null };

@@ -4,6 +4,7 @@ const NAV_ITEMS = [
   { id: 'home', label: 'Home', icon: '✦' },
   { id: 'keam', label: 'KEAM Helper', icon: '🎓' },
   { id: 'projects', label: 'Projects', icon: '⚡' },
+  { id: 'timeline', label: 'Journey', icon: '📅' },
   { id: 'about', label: 'About', icon: '👤' },
   { id: 'contact', label: 'Contact', icon: '✉️' },
 ];

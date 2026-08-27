@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-bs-theme="light">
+<html lang="en" data-bs-theme="dark">
 <head>
     <title>KEAM Counselling Guide | Timeline, Documents & Rules</title>
     <meta charset="UTF-8">
@@ -292,7 +292,7 @@
         }
 
         $(document).ready(function() {
-            applyTheme(localStorage.getItem('keam_ui_theme') || 'light');
+            applyTheme(localStorage.getItem('keam_ui_theme') || 'dark');
             sendTelemetry('Page Load', '', '');
             $('#themeToggleBtn').on('click', function() {
                 var target = $('html').attr('data-bs-theme') === 'dark' ? 'light' : 'dark';

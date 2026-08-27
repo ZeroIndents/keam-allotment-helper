@@ -127,12 +127,13 @@ SITE_URL = "https://gavinjoseph.in"
 # (path, template, priority, changefreq) — drives the generated sitemap.xml
 SITEMAP_PAGES = [
     ("/", "index.html", "1.00", "daily"),
-    ("/options", "options.html", "0.90", "weekly"),
-    ("/predictor", "predictor.html", "0.80", "weekly"),
-    ("/guide", "guide.html", "0.80", "weekly"),
-    ("/resizer", "resizer.html", "0.80", "monthly"),
-    ("/counselling", "counselling.html", "0.70", "monthly"),
-    ("/statistics", "statistics.html", "0.70", "weekly"),
+    ("/keam/", "index.html", "0.95", "weekly"),
+    ("/keam/options", "options.html", "0.90", "weekly"),
+    ("/keam/predictor", "predictor.html", "0.90", "weekly"),
+    ("/keam/statistics", "statistics.html", "0.85", "weekly"),
+    ("/keam/guide", "guide.html", "0.80", "monthly"),
+    ("/keam/resizer", "resizer.html", "0.80", "monthly"),
+    ("/keam/counselling", "counselling.html", "0.75", "monthly"),
 ]
 
 # Idempotent index bootstrap. The DB is a build artifact (written by
@@ -335,8 +336,11 @@ def robots_txt():
     robots = (
         "User-agent: *\n"
         "Allow: /\n"
+        "Allow: /keam/\n"
+        "Allow: /keam/*\n"
         "Disallow: /admin\n"
-        f"Sitemap: {SITE_URL}/sitemap.xml\n"
+        "Disallow: /api/\n"
+        f"\nSitemap: {SITE_URL}/sitemap.xml\n"
     )
     return app.response_class(robots, mimetype='text/plain')
 
@@ -364,6 +368,29 @@ def sitemap():
            '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
            + '\n'.join(urls) + '\n</urlset>\n')
     return app.response_class(xml, mimetype='application/xml')
+
+
+# --- GITHUB PROXY (avoids CORS issues in browser) ---
+import urllib.request
+
+ALLOWED_GITHUB_HOSTS = ('api.github.com', 'github-contributions-api.jogruber.de')
+
+@app.route('/api/github/<path:gh_path>')
+def github_proxy(gh_path):
+    """Proxy GitHub / contributions API requests to avoid CORS issues in the browser."""
+    if gh_path.startswith('contributions/'):
+        host = 'github-contributions-api.jogruber.de'
+        upstream = f'https://{host}/v4/{gh_path[len("contributions/"):]}'
+    else:
+        host = 'api.github.com'
+        upstream = f'https://{host}/{gh_path}'
+    try:
+        req = urllib.request.Request(upstream, headers={'User-Agent': 'gavinjoseph-portfolio', 'Accept': 'application/vnd.github.v3+json'})
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            data = resp.read()
+            return app.response_class(data, mimetype='application/json', headers={'Access-Control-Allow-Origin': '*', 'Cache-Control': 'public, max-age=300'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 502
 
 
 # --- API ROUTES ---
@@ -1193,6 +1220,71 @@ def add_security_headers(resp):
         "worker-src 'self' blob: https://cdnjs.cloudflare.com"
     )
     return resp
+
+
+# --- BLOG SYSTEM ---
+import uuid
+import secrets as _secrets
+
+BLOGS_FILE = os.path.join(BASE_DIR, 'blogs.json')
+BLOG_ADMIN_TOKEN = os.environ.get('BLOG_ADMIN_TOKEN', 'gavin-admin-2026')
+
+def _load_blogs():
+    if not os.path.exists(BLOGS_FILE):
+        return []
+    with open(BLOGS_FILE, 'r') as f:
+        return json.load(f)
+
+def _save_blogs(blogs):
+    with open(BLOGS_FILE, 'w') as f:
+        json.dump(blogs, f, indent=2, ensure_ascii=False)
+
+@app.route('/api/blogs')
+def api_blogs_list():
+    blogs = _load_blogs()
+    blogs.sort(key=lambda b: b.get('created_at', ''), reverse=True)
+    return jsonify(blogs)
+
+@app.route('/api/blogs', methods=['POST'])
+def api_blogs_create():
+    token = request.headers.get('Authorization', '').replace('Bearer ', '')
+    if token != BLOG_ADMIN_TOKEN:
+        return jsonify({'error': 'Unauthorized'}), 401
+    data = request.get_json()
+    if not data or not data.get('title') or not data.get('content'):
+        return jsonify({'error': 'title and content required'}), 400
+    blog = {
+        'id': str(uuid.uuid4())[:8],
+        'title': data['title'],
+        'content': data['content'],
+        'tags': data.get('tags', []),
+        'read_time': data.get('read_time', '3 min read'),
+        'created_at': datetime.now().isoformat(),
+    }
+    blogs = _load_blogs()
+    blogs.append(blog)
+    _save_blogs(blogs)
+    return jsonify(blog), 201
+
+@app.route('/api/blogs/<blog_id>', methods=['DELETE'])
+def api_blogs_delete(blog_id):
+    token = request.headers.get('Authorization', '').replace('Bearer ', '')
+    if token != BLOG_ADMIN_TOKEN:
+        return jsonify({'error': 'Unauthorized'}), 401
+    blogs = _load_blogs()
+    before = len(blogs)
+    blogs = [b for b in blogs if b.get('id') != blog_id]
+    if len(blogs) == before:
+        return jsonify({'error': 'Not found'}), 404
+    _save_blogs(blogs)
+    return jsonify({'ok': True})
+
+@app.route('/admin/blogs')
+def admin_blogs_page():
+    admin_html = os.path.join(BASE_DIR, 'static', 'admin_blogs.html')
+    if os.path.exists(admin_html):
+        return send_file(admin_html)
+    return 'Admin page not found', 404
 
 
 # --- CATCH-ALL: serve React SPA for unmatched routes ---

@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — Blog Manager</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0a0e1a; color: #e2e8f0; min-height: 100vh; }
+.container { max-width: 800px; margin: 0 auto; padding: 40px 20px; }
+h1 { font-size: 28px; margin-bottom: 8px; background: linear-gradient(90deg, #7c3aed, #06b6d4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.subtitle { color: #94a3b8; margin-bottom: 30px; }
+.form-group { margin-bottom: 16px; }
+label { display: block; font-size: 13px; font-weight: 600; color: #94a3b8; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+input, textarea { width: 100%; padding: 12px 16px; background: #1e222d; border: 1px solid #2a2e39; border-radius: 8px; color: #e2e8f0; font-size: 14px; font-family: inherit; }
+input:focus, textarea:focus { outline: none; border-color: #7c3aed; }
+textarea { min-height: 300px; resize: vertical; font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.6; }
+.btn { padding: 12px 24px; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+.btn-primary { background: linear-gradient(135deg, #7c3aed, #06b6d4); color: white; }
+.btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 15px rgba(124,58,237,0.3); }
+.btn-danger { background: #ef4444; color: white; }
+.btn-danger:hover { background: #dc2626; }
+.btn-sm { padding: 6px 14px; font-size: 12px; }
+.post-list { margin-top: 30px; }
+.post-item { background: #1e222d; border: 1px solid #2a2e39; border-radius: 10px; padding: 16px 20px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+.post-title { font-weight: 600; font-size: 15px; }
+.post-date { font-size: 12px; color: #64748b; margin-top: 4px; }
+.status { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+.status-ok { background: rgba(34,197,94,0.15); color: #22c55e; }
+.preview { background: #131722; border: 1px solid #2a2e39; border-radius: 10px; padding: 20px; margin-top: 20px; white-space: pre-wrap; font-size: 14px; line-height: 1.7; max-height: 300px; overflow-y: auto; display: none; }
+.error { color: #ef4444; font-size: 13px; margin-top: 8px; display: none; }
+.success { color: #22c55e; font-size: 13px; margin-top: 8px; display: none; }
+#auth-section { text-align: center; padding: 60px 20px; }
+#auth-section input { max-width: 300px; margin: 0 auto 16px; text-align: center; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div id="auth-section">
+    <h1>Blog Admin</h1>
+    <p class="subtitle">Enter your admin token to continue</p>
+    <input type="password" id="token-input" placeholder="Admin token" onkeydown="if(event.key==='Enter')login()">
+    <br><button class="btn btn-primary" onclick="login()">Login</button>
+  </div>
+  <div id="admin-section" style="display:none">
+    <h1>Blog Manager</h1>
+    <p class="subtitle">Write and manage your blog posts</p>
+    <div class="form-group">
+      <label>Title</label>
+      <input type="text" id="post-title" placeholder="My blog post title">
+    </div>
+    <div class="form-group">
+      <label>Tags (comma-separated)</label>
+      <input type="text" id="post-tags" placeholder="iot, python, keam">
+    </div>
+    <div class="form-group">
+      <label>Content (Markdown supported)</label>
+      <textarea id="post-content" placeholder="Write your blog post here...
+
+You can use **bold**, *italic*, and code blocks."></textarea>
+    </div>
+    <div style="display:flex;gap:12px;align-items:center">
+      <button class="btn btn-primary" onclick="publishPost()">Publish</button>
+      <button class="btn btn-sm" style="background:#2a2e39;color:#94a3b8" onclick="togglePreview()">Preview</button>
+      <span id="post-status" class="error"></span>
+      <span id="post-success" class="success"></span>
+    </div>
+    <div id="preview-box" class="preview"></div>
+    <div class="post-list" id="post-list"></div>
+  </div>
+</div>
+<script>
+let TOKEN = localStorage.getItem('blog_admin_token') || '';
+
+function login() {
+  TOKEN = document.getElementById('token-input').value.trim();
+  if (!TOKEN) return;
+  localStorage.setItem('blog_admin_token', TOKEN);
+  document.getElementById('auth-section').style.display = 'none';
+  document.getElementById('admin-section').style.display = 'block';
+  loadPosts();
+}
+
+function headers() { return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + TOKEN }; }
+
+async function loadPosts() {
+  try {
+    const res = await fetch('/api/blogs');
+    const posts = await res.json();
+    const list = document.getElementById('post-list');
+    if (!posts.length) { list.innerHTML = '<p style="color:#64748b;text-align:center;padding:30px">No posts yet. Write your first one!</p>'; return; }
+    list.innerHTML = posts.map(p => `
+      <div class="post-item">
+        <div>
+          <div class="post-title">${esc(p.title)}</div>
+          <div class="post-date">${new Date(p.created_at).toLocaleDateString('en-IN', {day:'numeric',month:'short',year:'numeric'})} · ${p.read_time || '3 min read'}</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="status status-ok">Published</span>
+          <button class="btn btn-danger btn-sm" onclick="deletePost('${p.id}')">Delete</button>
+        </div>
+      </div>
+    `).join('');
+  } catch(e) { console.error(e); }
+}
+
+async function publishPost() {
+  const title = document.getElementById('post-title').value.trim();
+  const content = document.getElementById('post-content').value.trim();
+  const tags = document.getElementById('post-tags').value.split(',').map(t=>t.trim()).filter(Boolean);
+  if (!title || !content) { show('post-status', 'Title and content required'); return; }
+  try {
+    const res = await fetch('/api/blogs', { method:'POST', headers:headers(), body: JSON.stringify({title, content, tags}) });
+    if (!res.ok) { const e = await res.json(); show('post-status', e.error || 'Failed'); return; }
+    document.getElementById('post-title').value = '';
+    document.getElementById('post-content').value = '';
+    document.getElementById('post-tags').value = '';
+    show('post-success', 'Published!');
+    loadPosts();
+  } catch(e) { show('post-status', 'Network error'); }
+}
+
+async function deletePost(id) {
+  if (!confirm('Delete this post?')) return;
+  try {
+    await fetch('/api/blogs/' + id, { method:'DELETE', headers:headers() });
+    loadPosts();
+  } catch(e) { console.error(e); }
+}
+
+function togglePreview() {
+  const box = document.getElementById('preview-box');
+  const content = document.getElementById('post-content').value;
+  if (box.style.display === 'block') { box.style.display = 'none'; return; }
+  box.innerHTML = esc(content).replace(/\n/g, '<br>');
+  box.style.display = 'block';
+}
+
+function show(id, msg) { const el = document.getElementById(id); el.textContent = msg; el.style.display = 'block'; setTimeout(()=>el.style.display='none', 3000); }
+function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+if (TOKEN) { document.getElementById('auth-section').style.display='none'; document.getElementById('admin-section').style.display='block'; loadPosts(); }
+</script>
+</body></html>

@@ -125,7 +125,7 @@ export default function KeamShowcase() {
                     🚀 Launch App
                   </a>
                   <a
-                    href="https://github.com/gavinjoseph"
+                    href="https://github.com/ZeroIndents"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="btn-secondary"
