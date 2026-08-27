@@ -2,24 +2,24 @@ import React, { useRef, useState, useEffect } from 'react';
 
 const HIGHLIGHTS = [
   {
-    icon: '📊',
-    title: '290K+ Rows Processed',
-    desc: 'Every official KEAM allotment row parsed and indexed — no data skipped.',
+    icon: '🌐',
+    title: 'Full-Stack Developer',
+    desc: 'Python backends, React frontends, SQLite databases, REST APIs — build complete systems end-to-end.',
   },
   {
-    icon: '🏛️',
-    title: '142 Colleges Covered',
-    desc: 'Every engineering college in Kerala mapped with cutoff trends across 3 years.',
+    icon: '🤖',
+    title: 'IoT & Hardware',
+    desc: 'ESP32 devices, Home Assistant, Frigate NVR with custom YOLOv9 models, industrial sensors — real-world deployments.',
   },
   {
-    icon: '⚡',
-    title: 'Instant Search',
-    desc: 'Search through 290K+ rows in milliseconds — no PDF digging required.',
+    icon: '🧠',
+    title: 'AI & Data Pipelines',
+    desc: 'Zero-shot market forecasting, 290K+ row data pipelines, PDF parsing, web scraping — turning raw data into tools.',
   },
   {
-    icon: '🔓',
-    title: 'Free & Open',
-    desc: 'No login, no paywall, no ads. Built for students, by a student.',
+    icon: '🚀',
+    title: 'Ship & Deploy',
+    desc: 'Proxmox labs, Docker containers, Cloudflare, Gunicorn — production-grade infrastructure from day one.',
   },
 ];
 
@@ -46,13 +46,13 @@ export default function Testimonials() {
             isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
           }`}
         >
-          <span className="section-title">Why It Matters</span>
+          <span className="section-title">What I Do</span>
           <h2 className="text-3xl sm:text-4xl font-black mt-3 mb-2">
-            <span style={{color: 'var(--text-heading)'}}>Built With </span>
-            <span className="text-gradient">Real Data</span>
+            <span style={{color: 'var(--text-heading)'}}>Beyond </span>
+            <span className="text-gradient">The Code</span>
           </h2>
           <p className="text-sm max-w-lg mx-auto" style={{color: 'var(--text-secondary)'}}>
-            Not a mockup. Not a prototype. Every number below comes from actual CEE Kerala allotment data.
+            Building across the full stack — from IoT hardware to AI pipelines to production web apps.
           </p>
         </div>
 
