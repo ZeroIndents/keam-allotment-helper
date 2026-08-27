@@ -45,10 +45,10 @@ export default function Blog() {
         >
           <span className="section-title">Blog</span>
           <h2 className="text-4xl sm:text-5xl font-black mt-4 mb-4">
-            <span className="text-white">Latest </span>
+            <span style={{color: 'var(--text-heading)'}}>Latest </span>
             <span className="text-gradient">Writeups</span>
           </h2>
-          <p className="text-gray-400 text-lg max-w-xl mx-auto">
+          <p className="text-lg max-w-xl mx-auto" style={{color: 'var(--text-secondary)'}}>
             Thoughts on IoT, AI, and building things that matter.
           </p>
         </div>
@@ -57,9 +57,9 @@ export default function Blog() {
           <div className="space-y-5">
             {[1, 2].map((i) => (
               <div key={i} className="glass-card p-8 animate-pulse">
-                <div className="h-5 bg-white/5 rounded w-1/2 mb-4" />
-                <div className="h-3 bg-white/5 rounded w-full mb-2" />
-                <div className="h-3 bg-white/5 rounded w-3/4" />
+                <div className="h-5 rounded w-1/2 mb-4" style={{background: 'var(--accent-glow)'}} />
+                <div className="h-3 rounded w-full mb-2" style={{background: 'var(--accent-glow)'}} />
+                <div className="h-3 rounded w-3/4" style={{background: 'var(--accent-glow)'}} />
               </div>
             ))}
           </div>
@@ -84,9 +84,7 @@ export default function Blog() {
                   <span className="text-xs text-gray-600">·</span>
                   <span className="text-xs text-gray-500">{post.read_time || '3 min read'}</span>
                 </div>
-                <h3 className="text-xl font-bold text-white mb-3">{post.title}</h3>
-                <div
-                  className="text-sm text-gray-400 leading-relaxed mb-4"
+                <h3 className="text-xl font-bold mb-3" style={{color: 'var(--text-heading)'}}>{post.title}</h3>                <div className="text-sm leading-relaxed mb-4"
                   dangerouslySetInnerHTML={{
                     __html: renderContent(
                       post.content.length > 300
@@ -100,7 +98,7 @@ export default function Blog() {
                     {post.tags.map((tag) => (
                       <span
                         key={tag}
-                        className="text-[11px] px-3 py-1 rounded-full bg-galaxy-500/10 text-galaxy-300 border border-galaxy-500/20"
+                        className="text-[11px] px-3 py-1 rounded-full" style={{background: 'var(--skill-badge-bg)', color: 'var(--text-accent)', border: '1px solid var(--skill-badge-border)'}}
                       >
                         {tag}
                       </span>
@@ -113,13 +111,13 @@ export default function Blog() {
         ) : (
           <div className="text-center py-16 glass-card">
             <div className="text-4xl mb-4">📝</div>
-            <p className="text-gray-400 text-lg mb-2">No posts yet</p>
-            <p className="text-gray-600 text-sm">
+            <p className="text-lg mb-2" style={{color: 'var(--text-secondary)'}}>No posts yet</p>
+            <p className="text-sm" style={{color: 'var(--text-muted)'}}>
               Blog posts will appear here once published.
               <br />
               <a
                 href="/admin/blogs"
-                className="text-galaxy-400 hover:underline mt-2 inline-block"
+                className="hover:underline mt-2 inline-block" style={{color: 'var(--text-accent)'}}
               >
                 Write your first post →
               </a>

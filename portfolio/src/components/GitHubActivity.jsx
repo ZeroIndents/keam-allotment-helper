@@ -88,17 +88,17 @@ export default function GitHubActivity() {
           <div className="text-center mb-8">
             <span className="section-title">Live</span>
             <h2 className="text-3xl sm:text-4xl font-black mt-3 mb-2">
-              <span className="text-white">GitHub </span>
+              <span style={{color: 'var(--text-heading)'}}>GitHub </span>
               <span className="text-gradient">Activity</span>
             </h2>
-            <p className="text-gray-400 text-sm">Recent activity from my GitHub profile</p>
+            <p className="text-sm" style={{color: 'var(--text-secondary)'}}>Recent activity from my GitHub profile</p>
           </div>
 
           <div className="glass-card p-6">
             {loading ? (
               <div className="space-y-3">
                 {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="h-12 bg-white/5 rounded-lg animate-pulse" />
+                  <div key={i} className="h-12 rounded-lg animate-pulse" style={{background: 'var(--accent-glow)'}} />
                 ))}
               </div>
             ) : events.length > 0 ? (
@@ -106,7 +106,7 @@ export default function GitHubActivity() {
                 {events.map((event, i) => (
                   <div
                     key={event.id}
-                    className={`flex items-center gap-3 p-3 rounded-lg hover:bg-white/5 transition-colors ${
+                    className={`flex items-center gap-3 p-3 rounded-lg transition-colors ${
                       isVisible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'
                     }`}
                     style={{ transitionDelay: `${100 + i * 60}ms` }}
@@ -115,16 +115,16 @@ export default function GitHubActivity() {
                       {EVENT_ICONS[event.type] || '📌'}
                     </span>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm text-gray-300 truncate">{formatEvent(event)}</p>
+                      <p className="text-sm truncate" style={{color: 'var(--text-primary)'}}>{formatEvent(event)}</p>
                     </div>
-                    <span className="text-[11px] text-gray-600 flex-shrink-0">
+                    <span className="text-[11px] flex-shrink-0" style={{color: 'var(--text-muted)'}}>
                       {timeAgo(event.created_at)}
                     </span>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-center text-gray-500 text-sm py-4">No recent activity</p>
+              <p className="text-center text-sm py-4" style={{color: 'var(--text-muted)'}}>No recent activity</p>
             )}
           </div>
         </div>

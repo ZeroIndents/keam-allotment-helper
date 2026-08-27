@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTheme } from '../ThemeContext';
 
 const NAV_ITEMS = [
   { id: 'home', label: 'Home', icon: '✦' },
@@ -12,6 +13,7 @@ const NAV_ITEMS = [
 export default function Navbar() {
   const [active, setActive] = useState('home');
   const [scrolled, setScrolled] = useState(false);
+  const { theme, toggleTheme } = useTheme();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -61,6 +63,14 @@ export default function Navbar() {
             <span className="sm:hidden">{item.icon}</span>
           </button>
         ))}
+        <button
+          onClick={toggleTheme}
+          className="theme-toggle ml-1"
+          aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
+          title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
+        >
+          {theme === 'dark' ? '☀️' : '🌙'}
+        </button>
       </div>
     </nav>
   );

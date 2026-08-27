@@ -39,7 +39,7 @@ export default function SkillsChart() {
           <div className="text-center mb-10">
             <span className="section-title">Expertise</span>
             <h2 className="text-3xl sm:text-4xl font-black mt-3 mb-2">
-              <span className="text-white">Tech </span>
+              <span style={{color: 'var(--text-heading)'}}>Tech </span>
               <span className="text-gradient">Skills</span>
             </h2>
           </div>
@@ -55,10 +55,10 @@ export default function SkillsChart() {
                   style={{ transitionDelay: `${100 + i * 50}ms` }}
                 >
                   <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-sm font-medium text-gray-300">{skill.name}</span>
-                    <span className="text-xs font-bold text-gray-500">{skill.level}%</span>
+                    <span className="text-sm font-medium" style={{color: 'var(--text-primary)'}}>{skill.name}</span>
+                    <span className="text-xs font-bold" style={{color: 'var(--text-muted)'}}>{skill.level}%</span>
                   </div>
-                  <div className="h-2.5 rounded-full bg-white/5 overflow-hidden">
+                  <div className="h-2.5 rounded-full overflow-hidden" style={{background: 'var(--accent-glow)'}}>
                     <div
                       className="h-full rounded-full transition-all duration-1000 ease-out"
                       style={{

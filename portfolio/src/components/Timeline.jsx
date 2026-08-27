@@ -20,7 +20,7 @@ const MILESTONES = [
     title: 'KEAM Allotment Helper',
     desc: 'Built a Flask/SQLite app to parse 290K+ CEE Kerala PDF allotment lists into a searchable database.',
     icon: '🎓',
-    color: 'from-galaxy-500 to-blue-500',
+    color: 'from-emerald-500 to-teal-500',
   },
   {
     date: '2026',
@@ -70,17 +70,17 @@ export default function Timeline() {
         >
           <span className="section-title">Journey</span>
           <h2 className="text-4xl sm:text-5xl font-black mt-4 mb-4">
-            <span className="text-white">My </span>
+            <span style={{color: 'var(--text-heading)'}}>My </span>
             <span className="text-gradient">Timeline</span>
           </h2>
-          <p className="text-gray-400 text-lg max-w-xl mx-auto">
+          <p className="text-lg max-w-xl mx-auto" style={{color: 'var(--text-secondary)'}}>
             Key milestones and projects that shaped my journey.
           </p>
         </div>
 
         <div className="relative">
           {/* Vertical line */}
-          <div className="absolute left-6 md:left-1/2 top-0 bottom-0 w-px bg-gradient-to-b from-galaxy-500/50 via-blue-500/30 to-transparent" />
+          <div className="absolute left-6 md:left-1/2 top-0 bottom-0 w-px" style={{background: 'linear-gradient(to bottom, var(--accent-glow-strong), var(--accent-glow), transparent)'}} />
 
           {MILESTONES.map((m, i) => (
             <div
@@ -93,11 +93,11 @@ export default function Timeline() {
               {/* Content */}
               <div className={`flex-1 ${i % 2 === 0 ? 'md:text-right' : 'md:text-left'}`}>
                 <div className={`glass-card p-6 inline-block ${i % 2 === 0 ? 'md:ml-auto' : ''}`}>
-                  <span className="text-xs font-bold text-galaxy-300 uppercase tracking-wider">
+                  <span className="text-xs font-bold uppercase tracking-wider" style={{color: 'var(--text-accent)'}}>
                     {m.date}
                   </span>
-                  <h3 className="text-lg font-bold text-white mt-1 mb-2">{m.title}</h3>
-                  <p className="text-sm text-gray-400 leading-relaxed">{m.desc}</p>
+                  <h3 className="text-lg font-bold mt-1 mb-2" style={{color: 'var(--text-heading)'}}>{m.title}</h3>
+                  <p className="text-sm leading-relaxed" style={{color: 'var(--text-secondary)'}}>{m.desc}</p>
                 </div>
               </div>
 

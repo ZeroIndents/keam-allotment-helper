@@ -48,10 +48,10 @@ export default function Testimonials() {
         >
           <span className="section-title">Why It Matters</span>
           <h2 className="text-3xl sm:text-4xl font-black mt-3 mb-2">
-            <span className="text-white">Built With </span>
+            <span style={{color: 'var(--text-heading)'}}>Built With </span>
             <span className="text-gradient">Real Data</span>
           </h2>
-          <p className="text-gray-400 text-sm max-w-lg mx-auto">
+          <p className="text-sm max-w-lg mx-auto" style={{color: 'var(--text-secondary)'}}>
             Not a mockup. Not a prototype. Every number below comes from actual CEE Kerala allotment data.
           </p>
         </div>
@@ -66,8 +66,8 @@ export default function Testimonials() {
               style={{ transitionDelay: `${200 + i * 100}ms` }}
             >
               <div className="text-3xl mb-3">{h.icon}</div>
-              <h3 className="text-base font-bold text-white mb-2">{h.title}</h3>
-              <p className="text-xs text-gray-400 leading-relaxed">{h.desc}</p>
+              <h3 className="text-base font-bold mb-2" style={{color: 'var(--text-heading)'}}>{h.title}</h3>
+              <p className="text-xs leading-relaxed" style={{color: 'var(--text-secondary)'}}>{h.desc}</p>
             </div>
           ))}
         </div>

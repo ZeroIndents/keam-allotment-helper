@@ -118,10 +118,10 @@ export default function Projects({ onSelectProject }) {
         >
           <span className="section-title">Portfolio</span>
           <h2 className="text-4xl sm:text-5xl font-black mt-4 mb-4">
-            <span className="text-white">My </span>
+            <span style={{color: 'var(--text-heading)'}}>My </span>
             <span className="text-gradient">Projects</span>
           </h2>
-          <p className="text-gray-400 text-lg max-w-xl mx-auto">
+          <p className="text-lg max-w-xl mx-auto" style={{color: 'var(--text-secondary)'}}>
             Open-source work and experiments — all available on GitHub.
           </p>
         </div>
@@ -135,19 +135,19 @@ export default function Projects({ onSelectProject }) {
           >
             <div className="glass-card p-4 text-center">
               <div className="text-2xl font-black text-gradient">{profile.public_repos}</div>
-              <div className="text-[11px] text-gray-500 font-medium uppercase tracking-wider mt-1">Public Repos</div>
+              <div className="text-[11px] font-medium uppercase tracking-wider mt-1" style={{color: 'var(--text-muted)'}}>Public Repos</div>
             </div>
             <div className="glass-card p-4 text-center">
               <div className="text-2xl font-black text-gradient">⭐ {totalStars}</div>
-              <div className="text-[11px] text-gray-500 font-medium uppercase tracking-wider mt-1">Total Stars</div>
+              <div className="text-[11px] font-medium uppercase tracking-wider mt-1" style={{color: 'var(--text-muted)'}}>Total Stars</div>
             </div>
             <div className="glass-card p-4 text-center">
               <div className="text-2xl font-black text-gradient">{profile.followers}</div>
-              <div className="text-[11px] text-gray-500 font-medium uppercase tracking-wider mt-1">Followers</div>
+              <div className="text-[11px] font-medium uppercase tracking-wider mt-1" style={{color: 'var(--text-muted)'}}>Followers</div>
             </div>
             <div className="glass-card p-4 text-center">
               <div className="text-2xl font-black text-gradient">{profile.following}</div>
-              <div className="text-[11px] text-gray-500 font-medium uppercase tracking-wider mt-1">Following</div>
+              <div className="text-[11px] font-medium uppercase tracking-wider mt-1" style={{color: 'var(--text-muted)'}}>Following</div>
             </div>
           </div>
         )}
@@ -163,10 +163,13 @@ export default function Projects({ onSelectProject }) {
               key={lang}
               onClick={() => setFilter(lang)}
               className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
-                filter === lang
-                  ? 'bg-galaxy-500/30 text-galaxy-200 border border-galaxy-400/40'
-                  : 'glass text-gray-400 hover:text-white hover:border-gray-500'
+                filter === lang ? '' : 'glass'
               }`}
+              style={filter === lang ? {
+                background: 'var(--accent-glow-strong)',
+                color: 'var(--text-accent)',
+                border: '1px solid var(--border-hover)',
+              } : { color: 'var(--text-secondary)' }}
             >
               {lang === 'all' ? 'All' : lang}
               {lang !== 'all' && (
@@ -184,12 +187,12 @@ export default function Projects({ onSelectProject }) {
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {[1, 2, 3, 4, 5, 6].map((i) => (
               <div key={i} className="glass-card p-6 animate-pulse">
-                <div className="h-4 bg-white/5 rounded w-3/4 mb-4" />
-                <div className="h-3 bg-white/5 rounded w-full mb-2" />
-                <div className="h-3 bg-white/5 rounded w-2/3 mb-4" />
+                <div className="h-4 rounded w-3/4 mb-4" style={{background: 'var(--accent-glow)'}} />
+                <div className="h-3 rounded w-full mb-2" style={{background: 'var(--accent-glow)'}} />
+                <div className="h-3 rounded w-2/3 mb-4" style={{background: 'var(--accent-glow)'}} />
                 <div className="flex gap-2">
-                  <div className="h-5 bg-white/5 rounded-full w-12" />
-                  <div className="h-5 bg-white/5 rounded-full w-16" />
+                  <div className="h-5 rounded-full w-12" style={{background: 'var(--accent-glow)'}} />
+                  <div className="h-5 rounded-full w-16" style={{background: 'var(--accent-glow)'}} />
                 </div>
               </div>
             ))}
@@ -209,7 +212,7 @@ export default function Projects({ onSelectProject }) {
         )}
 
         {!loading && filtered.length === 0 && (
-          <div className="text-center py-16 text-gray-500">
+          <div className="text-center py-16" style={{color: 'var(--text-muted)'}}>
             <p className="text-lg">No projects found for this filter.</p>
           </div>
         )}
@@ -246,11 +249,11 @@ function ProjectCard({ repo, index, isVisible, onClick }) {
     >
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-2 min-w-0">
-          <h3 className="text-base font-bold text-white group-hover:text-galaxy-300 transition-colors truncate">
+          <h3 className="text-base font-bold transition-colors truncate" style={{color: 'var(--text-heading)'}}>
             {repo.name}
           </h3>
           {repo.featured && (
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-galaxy-500/20 text-galaxy-300 border border-galaxy-500/30 whitespace-nowrap">
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap" style={{background: 'var(--accent-glow)', color: 'var(--text-accent)', border: '1px solid var(--border-primary)'}}>
               ⭐ Featured
             </span>
           )}
@@ -260,13 +263,13 @@ function ProjectCard({ repo, index, isVisible, onClick }) {
           fill="none"
           stroke="currentColor"
           strokeWidth="2"
-          className="w-4 h-4 text-gray-600 group-hover:text-galaxy-400 transition-colors flex-shrink-0 mt-1"
+          className="w-4 h-4 transition-colors flex-shrink-0 mt-1"
         >
           <path d="M7 17L17 7M17 7H7M17 7v10" />
         </svg>
       </div>
 
-      <p className="text-sm text-gray-400 leading-relaxed mb-4 line-clamp-2 min-h-[2.5rem]">
+      <p className="text-sm leading-relaxed mb-4 line-clamp-2 min-h-[2.5rem]" style={{color: 'var(--text-secondary)'}}>
         {repo.description || 'No description provided.'}
       </p>
 
@@ -288,13 +291,13 @@ function ProjectCard({ repo, index, isVisible, onClick }) {
         )}
 
         {repo.stargazers_count > 0 && (
-          <span className="inline-flex items-center gap-1 text-xs text-gray-500">
+          <span className="inline-flex items-center gap-1 text-xs" style={{color: 'var(--text-muted)'}}>
             ⭐ {repo.stargazers_count}
           </span>
         )}
 
         {repo.forks_count > 0 && (
-          <span className="inline-flex items-center gap-1 text-xs text-gray-500">
+          <span className="inline-flex items-center gap-1 text-xs" style={{color: 'var(--text-muted)'}}>
             🍴 {repo.forks_count}
           </span>
         )}
@@ -304,7 +307,7 @@ function ProjectCard({ repo, index, isVisible, onClick }) {
             {repo.topics.slice(0, 3).map((topic) => (
               <span
                 key={topic}
-                className="text-[10px] px-2 py-0.5 rounded-full bg-galaxy-500/10 text-galaxy-300 border border-galaxy-500/20"
+                className="text-[10px] px-2 py-0.5 rounded-full" style={{background: 'var(--skill-badge-bg)', color: 'var(--text-accent)', border: '1px solid var(--skill-badge-border)'}}
               >
                 {topic}
               </span>

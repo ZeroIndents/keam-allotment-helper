@@ -53,7 +53,7 @@ export default function EasterEgg() {
         <div className="glass-card p-8 text-center animate-bounce">
           <div className="text-6xl mb-4">🎮</div>
           <h3 className="text-2xl font-black text-gradient mb-2">KONAMI CODE ACTIVATED!</h3>
-          <p className="text-gray-400 text-sm">You found the easter egg! 🎉</p>
+          <p className="text-sm" style={{color: 'var(--text-secondary)'}}>You found the easter egg! 🎉</p>
         </div>
       </div>
     </div>

@@ -25,19 +25,19 @@ export default function ProjectModal({ project, onClose }) {
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
-        <div className="p-6 border-b border-white/5">
+        <div className="p-6 border-b" style={{borderColor: 'var(--border-subtle)'}}>
           <div className="flex items-start justify-between">
             <div>
-              <h2 className="text-xl font-bold text-white mb-1">
+              <h2 className="text-xl font-bold mb-1" style={{color: 'var(--text-heading)'}}>
                 {project.name}
               </h2>
               {project.description && (
-                <p className="text-sm text-gray-400">{project.description}</p>
+                <p className="text-sm" style={{color: 'var(--text-secondary)'}}>{project.description}</p>
               )}
             </div>
             <button
               onClick={onClose}
-              className="text-gray-500 hover:text-white transition-colors p-1 -m-1"
+              className="transition-colors p-1 -m-1"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5">
                 <path d="M18 6L6 18M6 6l12 12" />
@@ -52,31 +52,31 @@ export default function ProjectModal({ project, onClose }) {
           <div className="grid grid-cols-3 gap-3">
             {project.language && (
               <div className="glass rounded-xl p-3 text-center">
-                <div className="text-sm font-bold text-white">{project.language}</div>
-                <div className="text-[10px] text-gray-500 uppercase tracking-wider mt-1">Language</div>
+                <div className="text-sm font-bold" style={{color: 'var(--text-heading)'}}>{project.language}</div>
+                <div className="text-[10px] uppercase tracking-wider mt-1" style={{color: 'var(--text-muted)'}}>Language</div>
               </div>
             )}
             <div className="glass rounded-xl p-3 text-center">
-              <div className="text-sm font-bold text-white">⭐ {project.stargazers_count}</div>
-              <div className="text-[10px] text-gray-500 uppercase tracking-wider mt-1">Stars</div>
+              <div className="text-sm font-bold" style={{color: 'var(--text-heading)'}}>⭐ {project.stargazers_count}</div>
+              <div className="text-[10px] uppercase tracking-wider mt-1" style={{color: 'var(--text-muted)'}}>Stars</div>
             </div>
             <div className="glass rounded-xl p-3 text-center">
-              <div className="text-sm font-bold text-white">🍴 {project.forks_count}</div>
-              <div className="text-[10px] text-gray-500 uppercase tracking-wider mt-1">Forks</div>
+              <div className="text-sm font-bold" style={{color: 'var(--text-heading)'}}>🍴 {project.forks_count}</div>
+              <div className="text-[10px] uppercase tracking-wider mt-1" style={{color: 'var(--text-muted)'}}>Forks</div>
             </div>
           </div>
 
           {/* Topics */}
           {project.topics && project.topics.length > 0 && (
             <div>
-              <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+              <h4 className="text-xs font-bold uppercase tracking-wider mb-2" style={{color: 'var(--text-muted)'}}>
                 Topics
               </h4>
               <div className="flex flex-wrap gap-2">
                 {project.topics.map((topic) => (
                   <span
                     key={topic}
-                    className="text-xs px-3 py-1 rounded-full bg-galaxy-500/10 text-galaxy-300 border border-galaxy-500/20"
+                    className="text-xs px-3 py-1 rounded-full" style={{background: 'var(--skill-badge-bg)', color: 'var(--text-accent)', border: '1px solid var(--skill-badge-border)'}}
                   >
                     {topic}
                   </span>
@@ -88,29 +88,29 @@ export default function ProjectModal({ project, onClose }) {
           {/* Details */}
           <div className="space-y-3">
             <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-500">Created</span>
-              <span className="text-gray-300 font-medium">{formatDate(project.created_at)}</span>
+              <span style={{color: 'var(--text-muted)'}}>Created</span>
+              <span className="font-medium" style={{color: 'var(--text-primary)'}}>{formatDate(project.created_at)}</span>
             </div>
             <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-500">Last Updated</span>
-              <span className="text-gray-300 font-medium">{formatDate(project.updated_at)}</span>
+              <span style={{color: 'var(--text-muted)'}}>Last Updated</span>
+              <span className="font-medium" style={{color: 'var(--text-primary)'}}>{formatDate(project.updated_at)}</span>
             </div>
             <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-500">Size</span>
-              <span className="text-gray-300 font-medium">{(project.size / 1024).toFixed(1)} MB</span>
+              <span style={{color: 'var(--text-muted)'}}>Size</span>
+              <span className="font-medium" style={{color: 'var(--text-primary)'}}>{(project.size / 1024).toFixed(1)} MB</span>
             </div>
             <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-500">License</span>
-              <span className="text-gray-300 font-medium">{project.license?.name || 'None'}</span>
+              <span style={{color: 'var(--text-muted)'}}>License</span>
+              <span className="font-medium" style={{color: 'var(--text-primary)'}}>{project.license?.name || 'None'}</span>
             </div>
             {project.homepage && (
               <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-500">Website</span>
+                <span style={{color: 'var(--text-muted)'}}>Website</span>
                 <a
                   href={project.homepage}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-galaxy-300 hover:text-galaxy-200 font-medium"
+                  className="font-medium"
                 >
                   {project.homepage}
                 </a>
@@ -120,7 +120,7 @@ export default function ProjectModal({ project, onClose }) {
         </div>
 
         {/* Footer */}
-        <div className="p-6 border-t border-white/5 flex gap-3">
+        <div className="p-6 border-t flex gap-3" style={{borderColor: 'var(--border-subtle)'}}>
           <a
             href={project.html_url}
             target="_blank"

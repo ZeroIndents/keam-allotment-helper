@@ -52,8 +52,8 @@ export default function Hero() {
             visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
           }`}
         >
-          <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
-          <span className="text-sm text-gray-400 font-medium">
+          <span className="w-2 h-2 rounded-full animate-pulse" style={{background: 'var(--accent-primary)'}} />
+          <span className="text-sm font-medium" style={{color: 'var(--text-secondary)'}}>
             Open to opportunities
           </span>
         </div>
@@ -65,23 +65,25 @@ export default function Hero() {
           }`}
         >
           <span className="text-gradient">Gavin</span>{' '}
-          <span className="text-white">Joseph</span>
+          <span style={{color: 'var(--text-heading)'}}>Joseph</span>
         </h1>
 
         {/* Tagline */}
         <p
-          className={`text-lg sm:text-xl md:text-2xl text-gray-400 font-light max-w-2xl mx-auto mb-4 leading-relaxed transition-all duration-700 delay-200 ${
+          className={`text-lg sm:text-xl md:text-2xl font-light max-w-2xl mx-auto mb-4 leading-relaxed transition-all duration-700 delay-200 ${
             visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
           }`}
+          style={{color: 'var(--text-secondary)'}}
         >
           Full-stack developer &amp; engineer building tools
           <br className="hidden sm:block" /> that make a real difference.
         </p>
 
         <p
-          className={`text-sm text-gray-500 font-medium mb-10 transition-all duration-700 delay-300 ${
+          className={`text-sm font-medium mb-10 transition-all duration-700 delay-300 ${
             visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
           }`}
+          style={{color: 'var(--text-muted)'}}
         >
           Python · React · Flask · SQLite · Tailwind CSS
         </p>
@@ -98,13 +100,13 @@ export default function Hero() {
               href={social.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="group flex items-center gap-2 px-5 py-3 rounded-full glass-card hover:border-galaxy-400/40 transition-all duration-300"
+              className="group flex items-center gap-2 px-5 py-3 rounded-full glass-card"
               title={social.name}
             >
-              <span className="text-gray-400 group-hover:text-galaxy-300 transition-colors">
+              <span className="transition-colors" style={{color: 'var(--text-muted)'}}>
                 {social.icon}
               </span>
-              <span className="text-sm font-medium text-gray-300 group-hover:text-white transition-colors">
+              <span className="text-sm font-medium transition-colors" style={{color: 'var(--text-secondary)'}}>
                 {social.name}
               </span>
             </a>
@@ -141,12 +143,12 @@ export default function Hero() {
             visible ? 'opacity-100' : 'opacity-0'
           }`}
         >
-          <div className="flex flex-col items-center gap-2 text-gray-500">
+          <div className="flex flex-col items-center gap-2" style={{color: 'var(--text-muted)'}}>
             <span className="text-xs font-medium tracking-widest uppercase">
               Scroll
             </span>
-            <div className="w-5 h-8 rounded-full border border-gray-600 flex justify-center pt-1.5">
-              <div className="w-1 h-2 bg-gray-400 rounded-full animate-bounce" />
+            <div className="w-5 h-8 rounded-full flex justify-center pt-1.5" style={{border: '1px solid var(--border-subtle)'}}>
+              <div className="w-1 h-2 rounded-full animate-bounce" style={{background: 'var(--text-muted)'}} />
             </div>
           </div>
         </div>

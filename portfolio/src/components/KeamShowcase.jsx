@@ -64,9 +64,8 @@ export default function KeamShowcase() {
           <span className="section-title">Featured Project</span>
           <h2 className="text-4xl sm:text-5xl md:text-6xl font-black mt-4 mb-6">
             <span className="text-gradient">KEAM</span>{' '}
-            <span className="text-white">Allotment Helper</span>
-          </h2>
-          <p className="text-gray-400 text-lg max-w-2xl mx-auto leading-relaxed">
+            <span style={{color: 'var(--text-heading)'}}>Allotment Helper</span>
+          </h2>                <p className="text-lg max-w-2xl mx-auto leading-relaxed" style={{color: 'var(--text-secondary)'}}>
             A comprehensive tool helping thousands of engineering aspirants navigate
             CEE Kerala's allotment process with real data and intelligent predictions.
           </p>
@@ -78,32 +77,31 @@ export default function KeamShowcase() {
             isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
           }`}
         >
-          <div className="relative rounded-[18px] overflow-hidden bg-gradient-to-br from-galaxy-950/80 via-black/60 to-galaxy-950/80 p-8 sm:p-12">
+          <div className="relative rounded-[18px] overflow-hidden p-8 sm:p-12" style={{background: 'var(--bg-card)'}}>
             {/* Decorative elements */}
-            <div className="absolute top-0 right-0 w-96 h-96 bg-galaxy-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3" />
-            <div className="absolute bottom-0 left-0 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/3" />
+            <div className="absolute top-0 right-0 w-96 h-96 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3" style={{background: 'var(--accent-glow)'}} />
+            <div className="absolute bottom-0 left-0 w-64 h-64 rounded-full blur-3xl translate-y-1/2 -translate-x-1/3" style={{background: 'var(--accent-glow)'}} />
 
             <div className="relative grid lg:grid-cols-2 gap-12 items-center">
               {/* Left: description */}
               <div>
                 <div className="flex items-center gap-3 mb-6">
-                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-galaxy-500 to-blue-500 flex items-center justify-center text-2xl shadow-lg shadow-galaxy-500/30">
+                  <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl shadow-lg" style={{background: 'var(--accent-gradient)', boxShadow: '0 10px 15px -3px var(--accent-glow)'}}>
                     🎓
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold text-white">
+                    <h3 className="text-xl font-bold" style={{color: 'var(--text-heading)'}}>
                       KEAM Allotment Helper
                     </h3>
-                    <p className="text-xs text-gray-400 font-medium">
+                    <p className="text-xs font-medium" style={{color: 'var(--text-secondary)'}}>
                       Live at gavinjoseph.in/keam
                     </p>
                   </div>
                 </div>
 
-                <p className="text-gray-300 leading-relaxed mb-6">
-                  Built with <span className="text-galaxy-300 font-semibold">Flask</span>,{' '}
-                  <span className="text-galaxy-300 font-semibold">SQLite</span>, and{' '}
-                  <span className="text-galaxy-300 font-semibold">Bootstrap 5</span> — this tool
+                <p className="leading-relaxed mb-6" style={{color: 'var(--text-primary)'}}>                   Built with <span className="font-semibold" style={{color: 'var(--text-accent)'}}>Flask</span>,{' '}
+                   <span className="font-semibold" style={{color: 'var(--text-accent)'}}>SQLite</span>, and{' '}
+                   <span className="font-semibold" style={{color: 'var(--text-accent)'}}>Bootstrap 5</span> — this tool
                   parses official CEE Kerala PDF allotment lists and presents them through an
                   interactive dashboard with server-side DataTables, Chart.js visualizations,
                   and D3-powered migration maps.
@@ -174,7 +172,7 @@ export default function KeamShowcase() {
                   <div className="bg-black/40 rounded-lg p-3 space-y-2">
                     <div className="flex gap-2">
                       <div className="h-6 flex-1 rounded bg-galaxy-500/20 flex items-center px-2">
-                        <span className="text-[10px] text-galaxy-300">🎓 KEAM Allotment Helper</span>
+                        <span className="text-[10px]" style={{color: 'var(--text-accent)'}}>🎓 KEAM Allotment Helper</span>
                       </div>
                       <div className="h-6 w-16 rounded bg-emerald-500/20 flex items-center justify-center">
                         <span className="text-[10px] text-emerald-400">Predict</span>
@@ -214,10 +212,10 @@ export default function KeamShowcase() {
               style={{ transitionDelay: `${300 + i * 80}ms` }}
             >
               <div className="text-3xl mb-3">{feature.icon}</div>
-              <h3 className="text-base font-bold text-white mb-2">
+              <h3 className="text-base font-bold mb-2" style={{color: 'var(--text-heading)'}}>
                 {feature.title}
               </h3>
-              <p className="text-sm text-gray-400 leading-relaxed">
+              <p className="text-sm leading-relaxed" style={{color: 'var(--text-secondary)'}}>
                 {feature.desc}
               </p>
             </div>

@@ -146,18 +146,18 @@ export default function Terminal() {
           <div className="text-center mb-8">
             <span className="section-title">Interactive</span>
             <h2 className="text-3xl sm:text-4xl font-black mt-3 mb-2">
-              <span className="text-white">Terminal</span>
+              <span style={{color: 'var(--text-heading)'}}>Terminal</span>
             </h2>
-            <p className="text-gray-400 text-sm">Type <code className="text-galaxy-300">help</code> to see what you can explore</p>
+            <p className="text-sm" style={{color: 'var(--text-secondary)'}}>Type <code style={{color: 'var(--text-accent)'}}>help</code> to see what you can explore</p>
           </div>
 
           <div className="glass-card overflow-hidden">
             {/* Title bar */}
-            <div className="flex items-center gap-2 px-4 py-3 bg-black/40 border-b border-white/5">
+            <div className="flex items-center gap-2 px-4 py-3 border-b" style={{background: 'var(--bg-input)', borderColor: 'var(--border-subtle)'}}>
               <div className="w-3 h-3 rounded-full bg-red-500/80" />
               <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
               <div className="w-3 h-3 rounded-full bg-green-500/80" />
-              <span className="text-[11px] text-gray-500 ml-2 font-mono">gavin@portfolio ~ terminal</span>
+              <span className="text-[11px] ml-2 font-mono" style={{color: 'var(--text-muted)'}}>gavin@portfolio ~ terminal</span>
             </div>
 
             {/* Terminal body */}
@@ -168,10 +168,10 @@ export default function Terminal() {
             >
               {lines.map((line, i) => (
                 <div key={i} className={`mb-1 ${
-                  line.type === 'input' ? 'text-galaxy-300' :
+                  line.type === 'input' ? 'text-accent' :
                   line.type === 'error' ? 'text-red-400' :
-                  line.type === 'output' ? 'text-gray-300' :
-                  'text-gray-500'
+                  line.type === 'output' ? 'text-primary' :
+                  'text-muted'
                 }`}>
                   <pre className="whitespace-pre-wrap font-mono">{line.text}</pre>
                 </div>
@@ -179,14 +179,14 @@ export default function Terminal() {
 
               {/* Input line */}
               <form onSubmit={handleSubmit} className="flex items-center gap-2 mt-1">
-                <span className="text-galaxy-300 font-mono">$</span>
+                <span className="font-mono" style={{color: 'var(--text-accent)'}}>$</span>
                 <input
                   ref={inputRef}
                   type="text"
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  className="flex-1 bg-transparent outline-none text-white font-mono caret-galaxy-400"
+                  className="flex-1 bg-transparent outline-none font-mono" style={{color: 'var(--text-primary)'}}
                   autoFocus
                   spellCheck={false}
                 />

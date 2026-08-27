@@ -114,10 +114,10 @@ export default function GitHubGraph() {
           <div className="text-center mb-8">
             <span className="section-title">Activity</span>
             <h2 className="text-3xl sm:text-4xl font-black mt-3 mb-2">
-              <span className="text-white">GitHub </span>
+              <span style={{color: 'var(--text-heading)'}}>GitHub </span>
               <span className="text-gradient">Contributions</span>
             </h2>
-            <p className="text-gray-400 text-sm">
+            <p className="text-sm" style={{color: 'var(--text-secondary)'}}>
               {loading ? 'Loading...' : error ? 'Could not load contributions' : `${total} contributions in the last year`}
             </p>
           </div>
@@ -125,13 +125,13 @@ export default function GitHubGraph() {
           <div className="glass-card p-6 sm:p-8 overflow-x-auto">
             {loading ? (
               <div className="flex items-center justify-center h-32">
-                <div className="w-6 h-6 border-2 border-galaxy-400 border-t-transparent rounded-full animate-spin" />
+                <div className="w-6 h-6 border-2 rounded-full animate-spin" style={{borderColor: 'var(--accent-primary)', borderTopColor: 'transparent'}} />
               </div>
             ) : error ? (
-              <div className="text-center text-gray-500 py-8">
+              <div className="text-center py-8" style={{color: 'var(--text-muted)'}}>
                 <p className="text-2xl mb-2">📊</p>
                 <p>GitHub contributions couldn't be loaded right now.</p>
-                <a href="https://github.com/ZeroIndents" target="_blank" rel="noopener noreferrer" className="text-galaxy-400 text-sm mt-2 inline-block hover:underline">
+                <a href="https://github.com/ZeroIndents" target="_blank" rel="noopener noreferrer" className="text-sm mt-2 inline-block hover:underline" style={{color: 'var(--text-accent)'}}>
                   View profile →
                 </a>
               </div>
@@ -142,7 +142,7 @@ export default function GitHubGraph() {
                   {monthLabels.map((m, i) => (
                     <div
                       key={i}
-                      className="text-[10px] text-gray-500"
+                      className="text-[10px]"
                       style={{
                         position: 'relative',
                         left: `${m.index * 16}px`,
@@ -159,7 +159,7 @@ export default function GitHubGraph() {
                   <div className="flex flex-col gap-[3px] mr-1 justify-center">
                     {['', 'Mon', '', 'Wed', '', 'Fri', ''].map((d, i) => (
                       <div key={i} className="text-[10px] text-gray-500 h-[12px] leading-[12px]">
-                        {d}
+                        <span style={{color: 'var(--text-muted)'}}>{d}</span>
                       </div>
                     ))}
                   </div>
@@ -190,7 +190,7 @@ export default function GitHubGraph() {
                 </div>
 
                 {/* Legend */}
-                <div className="flex items-center justify-end gap-1 mt-3 text-[10px] text-gray-500">
+                <div className="flex items-center justify-end gap-1 mt-3 text-[10px]" style={{color: 'var(--text-muted)'}}>
                   <span>Less</span>
                   {DARK_LEVEL_COLORS.map((color, i) => (
                     <div

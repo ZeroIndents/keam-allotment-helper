@@ -24,10 +24,10 @@ export default function ResumeDownload() {
           }`}
         >
           <div className="text-5xl mb-4">📄</div>
-          <h2 className="text-2xl sm:text-3xl font-black text-white mb-3">
+          <h2 className="text-2xl sm:text-3xl font-black mb-3" style={{color: 'var(--text-heading)'}}>
             Download My Resume
           </h2>
-          <p className="text-gray-400 mb-8 max-w-md mx-auto">
+          <p className="mb-8 max-w-md mx-auto" style={{color: 'var(--text-secondary)'}}>
             Get a detailed overview of my skills, projects, and experience in a clean PDF format.
           </p>
 
@@ -47,7 +47,7 @@ export default function ResumeDownload() {
             </a>
           </div>
 
-          <p className="text-[11px] text-gray-600 mt-6">
+          <p className="text-[11px] mt-6" style={{color: 'var(--text-muted)'}}>
             Last updated: August 2026
           </p>
         </div>
