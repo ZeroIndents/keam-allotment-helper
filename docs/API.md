@@ -153,7 +153,8 @@ at 500 rows, ordered by rank.
 | `GET /statistics` | Statistics dashboard |
 | `GET /resizer` | Document toolkit |
 | `GET /trends` | 302 → `/statistics` |
-| `GET /sitemap.xml` | XML sitemap |
+| `GET /robots.txt` | Crawl rules + sitemap pointer |
+| `GET /sitemap.xml` | XML sitemap (generated; lastmod = template mtime) |
 
 ## Errors
 

@@ -5,6 +5,28 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Predict your KEAM 2026 rank using the official CEE 5:3:2 board normalization formula, then see how your bracket compares to real 2026 cutoffs.">
+    <link rel="canonical" href="https://gavinjoseph.in/predictor">
+    <meta name="robots" content="index, follow, max-image-preview:large">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="KEAM Allotment Helper">
+    <meta property="og:title" content="KEAM 2026 Rank Predictor | 5:3:2 Normalization">
+    <meta property="og:description" content="Predict your KEAM 2026 rank using the official CEE 5:3:2 board normalization formula, then see how your bracket compares to real 2026 cutoffs.">
+    <meta property="og:url" content="https://gavinjoseph.in/predictor">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="KEAM 2026 Rank Predictor | 5:3:2 Normalization">
+    <meta name="twitter:description" content="Predict your KEAM 2026 rank with the official CEE 5:3:2 board normalization formula and compare your bracket to real 2026 cutoffs.">
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "KEAM Rank Predictor",
+      "url": "https://gavinjoseph.in/predictor",
+      "applicationCategory": "EducationalApplication",
+      "operatingSystem": "Any",
+      "description": "Estimate your KEAM State Merit rank from board marks and entrance score using the official CEE 5:3:2 normalization.",
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "INR" }
+    }
+    </script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <style>
@@ -114,7 +136,7 @@
 
     <div class="container mt-3 mt-md-4 mb-5" style="max-width: 800px;">
         <div class="d-flex justify-content-between align-items-start mb-3">
-            <a href="/" class="btn btn-sm btn-outline-secondary rounded-pill"><i class="bi bi-arrow-left me-1"></i> Back to Allotment Helper</a>
+            <a href="/keam/" class="btn btn-sm btn-outline-secondary rounded-pill"><i class="bi bi-arrow-left me-1"></i> Back to Allotment Helper</a>
             <button id="themeToggleBtn" class="btn btn-outline-secondary px-3 rounded-pill shadow-sm">
                 <i id="themeIcon" class="bi bi-moon-stars-fill me-2"></i><span id="themeText">Dark</span>
             </button>
@@ -127,6 +149,9 @@
             <p class="text-secondary mx-auto" style="max-width: 620px; line-height: 1.6;">
                 Enter your marks and see your expected <b>State Merit rank bracket</b> — based on the official CEE 5:3:2 board normalization and Brilliant Pala 2026 trend analysis.
             </p>
+            <noscript>
+                <p class="text-muted mx-auto" style="max-width: 620px;">The KEAM rank predictor estimates your State Merit rank using the official CEE 5:3:2 board normalization: 50% Mathematics, 30% Physics and 20% Chemistry from Class 12, added to your normalized KEAM entrance score, for a total index out of 600. Enable JavaScript to use the calculator.</p>
+            </noscript>
             <div class="d-flex flex-wrap justify-content-center gap-2">
                 <span class="chip bg-success-subtle text-success border border-success-subtle"><i class="bi bi-pencil-square me-1"></i> Board marks → /300</span>
                 <span class="chip bg-primary-subtle text-primary border border-primary-subtle"><i class="bi bi-file-earmark-text me-1"></i> KEAM score → /300</span>

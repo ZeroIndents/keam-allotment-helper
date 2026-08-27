@@ -4,7 +4,29 @@
     <title>KEAM College Predictor & Allotment Finder | 2024 - 2026 Archives</title>
     <meta name="description" content="Predict your admission chances based on official KEAM last rank details. Search by college short codes (TVE, FIT, MEC) and explore engineering cutoff trends across multiple allotment phases.">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="canonical" href="https://gavinjoseph.in/">
+    <meta name="robots" content="index, follow, max-image-preview:large">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="KEAM Allotment Helper">
+    <meta property="og:title" content="KEAM College Predictor & Allotment Finder | 2024 - 2026 Archives">
+    <meta property="og:description" content="Predict your admission chances based on official KEAM last rank details. Search by college short codes (TVE, FIT, MEC) and explore engineering cutoff trends across multiple allotment phases.">
+    <meta property="og:url" content="https://gavinjoseph.in/">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="KEAM College Predictor & Allotment Finder | 2024 - 2026 Archives">
+    <meta name="twitter:description" content="Predict your KEAM admission chances from official allotment details — search by register number, college or rank across 2024-2026.">
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "KEAM Allotment Helper",
+      "url": "https://gavinjoseph.in/",
+      "applicationCategory": "EducationalApplication",
+      "operatingSystem": "Any",
+      "description": "Predict your admission chances based on official KEAM last rank details. Search by college short codes (TVE, FIT, MEC) and explore engineering cutoff trends across multiple allotment phases.",
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "INR" }
+    }
+    </script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
@@ -63,10 +85,15 @@
         .star { position: absolute; background: #fff; border-radius: 50%; animation: twinkle 3s ease-in-out infinite; }
         @keyframes twinkle { 0%,100% { opacity: 0.15; } 50% { opacity: 0.9; } }
 
-        .blur-content { filter: blur(8px); pointer-events: none; user-select: none; }
-
-
-        .terms-modal-backdrop { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); z-index: 1050; display: flex; align-items: center; justify-content: center; padding: 15px; backdrop-filter: blur(4px); }
+        /* Notice banner (not a full-screen gate): keeps the page content
+           visible and readable to search engines while still showing the
+           disclaimer. Content must never be hidden behind an interaction. */
+        .terms-modal-backdrop { position: fixed; bottom: 16px; left: 16px; right: 16px; z-index: 1050; display: flex; justify-content: center; padding: 0; pointer-events: none; }
+        .terms-modal-backdrop .modal-dialog { pointer-events: auto; max-width: 640px !important; margin: 0 !important; box-shadow: 0 12px 40px rgba(31, 38, 135, 0.25); }
+        @media (max-width: 575.98px) {
+            #mainContent { padding-bottom: 90px !important; }
+            .terms-modal-backdrop { bottom: 8px; left: 8px; right: 8px; }
+        }
 
         .text-gradient {
             background: linear-gradient(90deg, #0d6efd, #0dcaf0);
@@ -168,7 +195,7 @@
     <div class="stars" id="starsLayer"></div>
 
     <div id="termsModal" class="terms-modal-backdrop">
-        <div class="modal-dialog m-0 w-100" style="max-width: 500px;">
+        <div class="modal-dialog m-0 w-100" style="max-width: 640px;">
             <div class="modal-content shadow-lg border-0 rounded-3 bg-body">
                 <div class="modal-header bg-primary text-white p-3 rounded-top">
                     <h5 class="modal-title font-weight-bold"><i class="bi bi-shield-exclamation me-2"></i>Data Disclaimer</h5>
@@ -183,16 +210,19 @@
         </div>
     </div>
 
-<div id="mainContent" class="container px-3 mt-3 mt-md-4 mb-5 blur-content">
+<div id="mainContent" class="container px-3 mt-3 mt-md-4 mb-5">
+        <div class="mb-3">
+            <a href="/" class="btn btn-sm btn-outline-secondary rounded-pill"><i class="bi bi-arrow-left me-1"></i> Back to Portfolio</a>
+        </div>
         <div class="d-flex justify-content-between align-items-start mb-4 pt-2">
             <div>
                 <div class="d-flex flex-wrap gap-3 mb-3">
-                    <a href="/options" class="btn btn-lg btn-primary bg-gradient rounded-pill shadow px-4 fw-bold text-white fs-6" onclick="sendTelemetry('Navigate','','find_options')"><i class="bi bi-geo-alt-fill me-2"></i> Find My Options</a>
-                    <a href="/predictor" class="btn btn-lg btn-success bg-gradient rounded-pill shadow px-4 fw-bold fs-6" onclick="sendTelemetry('Navigate','','predict_rank')"><i class="bi bi-calculator me-2"></i> Predict Rank</a>
-                    <a href="/resizer" class="btn btn-lg btn-info bg-gradient rounded-pill shadow px-4 fw-bold text-white fs-6" onclick="sendTelemetry('Navigate','','resize_files')"><i class="bi bi-crop me-2"></i> Resize Files</a>
-                    <a href="/statistics" class="btn btn-lg btn-primary bg-gradient rounded-pill shadow px-4 fw-bold text-white fs-6" onclick="sendTelemetry('Navigate','','view_statistics')"><i class="bi bi-bar-chart-line-fill me-2"></i> View Statistics</a>
-                    <a href="/counselling" class="btn btn-lg btn-warning bg-gradient rounded-pill shadow px-4 fw-bold fs-6" onclick="sendTelemetry('Navigate','','counselling_guide')"><i class="bi bi-list-check me-2"></i> Counselling Guide</a>
-                    <a href="/guide" class="btn btn-lg btn-light bg-gradient rounded-pill shadow px-4 fw-bold fs-6 border" onclick="sendTelemetry('Navigate','','how_to_guide')"><i class="bi bi-compass me-2"></i> How to Use</a>
+                    <a href="/keam/options" class="btn btn-lg btn-primary bg-gradient rounded-pill shadow px-4 fw-bold text-white fs-6" onclick="sendTelemetry('Navigate','','find_options')"><i class="bi bi-geo-alt-fill me-2"></i> Find My Options</a>
+                    <a href="/keam/predictor" class="btn btn-lg btn-success bg-gradient rounded-pill shadow px-4 fw-bold fs-6" onclick="sendTelemetry('Navigate','','predict_rank')"><i class="bi bi-calculator me-2"></i> Predict Rank</a>
+                    <a href="/keam/resizer" class="btn btn-lg btn-info bg-gradient rounded-pill shadow px-4 fw-bold text-white fs-6" onclick="sendTelemetry('Navigate','','resize_files')"><i class="bi bi-crop me-2"></i> Resize Files</a>
+                    <a href="/keam/statistics" class="btn btn-lg btn-primary bg-gradient rounded-pill shadow px-4 fw-bold text-white fs-6" onclick="sendTelemetry('Navigate','','view_statistics')"><i class="bi bi-bar-chart-line-fill me-2"></i> View Statistics</a>
+                    <a href="/keam/counselling" class="btn btn-lg btn-warning bg-gradient rounded-pill shadow px-4 fw-bold fs-6" onclick="sendTelemetry('Navigate','','counselling_guide')"><i class="bi bi-list-check me-2"></i> Counselling Guide</a>
+                    <a href="/keam/guide" class="btn btn-lg btn-light bg-gradient rounded-pill shadow px-4 fw-bold fs-6 border" onclick="sendTelemetry('Navigate','','how_to_guide')"><i class="bi bi-compass me-2"></i> How to Use</a>
                 </div>
                 <span class="badge bg-primary mb-2">Updated for 2026 Allotments</span>
                 <h2 class="font-weight-bold mb-0 text-gradient"><i class="bi bi-database-gear me-2 text-primary"></i>KEAM Allotment Helper</h2>
@@ -209,6 +239,35 @@
             <p class="text-secondary mx-auto" style="max-width: 800px; font-size: 1.1rem; line-height: 1.6;">
                 Navigating CEE Kerala's option registration doesn't have to be a guessing game. Search using your <strong>Register Number</strong> to instantly find your Allotment, or track engineering cutoffs across all phases.
             </p>
+            <noscript>
+                <div class="alert alert-info mx-auto text-start" style="max-width: 800px;">
+                    <p class="mb-2"><strong>Search the KEAM Allotment database</strong> — 290,000+ official allotment rows from CEE Kerala for 2024, 2025 and 2026 (Phases 1-3).</p>
+                    <p class="mb-1">Use the <a href="/keam/options">Find My Options</a> tool to see which colleges and courses your rank could reach, or the <a href="/keam/predictor">Rank Predictor</a> to estimate your State Merit rank from board marks and entrance score.</p>
+                    <p class="mb-0">Explore <a href="/keam/statistics">cutoff statistics and trends</a>, the <a href="/keam/counselling">counselling guide</a>, and the <a href="/keam/guide">how-to guide</a> for step-by-step instructions.</p>
+                </div>
+            </noscript>
+        </div>
+
+        <!-- Always-visible content (indexed by search engines even before JS) -->
+        <div class="row g-3 g-md-4 mb-5 justify-content-center">
+            <div class="col-md-4">
+                <div class="card h-100 p-3 p-md-4">
+                    <h2 class="h6 fw-bold text-primary mb-2"><i class="bi bi-search me-1"></i> Search Allotment Lists</h2>
+                    <p class="small text-secondary mb-0">Look up any register number or rank across the official CEE Kerala allotment lists for 2024-2026, filtered by year, round, college, course, category and seat type.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100 p-3 p-md-4">
+                    <h2 class="h6 fw-bold text-success mb-2"><i class="bi bi-compass me-1"></i> Find Your Options</h2>
+                    <p class="small text-secondary mb-0">Enter your expected KEAM rank to see which colleges and courses are within reach — tagged Safe, Moderate or Ambitious from last year's closing ranks.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100 p-3 p-md-4">
+                    <h2 class="h6 fw-bold text-warning-emphasis mb-2"><i class="bi bi-graph-up-arrow me-1"></i> Cutoff Trends</h2>
+                    <p class="small text-secondary mb-0">Compare opening and closing ranks per college and branch, track how cutoffs move round by round, and understand category-wise rank spreads.</p>
+                </div>
+            </div>
         </div>
 
         <div class="row g-2 g-md-3 mb-4">
@@ -370,13 +429,14 @@
                 applyTheme(target);
             });
 
+            // The disclaimer is a dismissible notice; the page content is
+            // always visible (never blurred/hidden) so it stays indexable.
             if (localStorage.getItem('keam_terms_accepted') === 'true') {
                 $('#termsModal').hide();
-                $('#mainContent').removeClass('blur-content');
             }
             $('#acceptTermsBtn').on('click', function() {
                 localStorage.setItem('keam_terms_accepted', 'true');
-                $('#termsModal').fadeOut(250, function() { $('#mainContent').removeClass('blur-content'); });
+                $('#termsModal').fadeOut(250);
             });
 
             // Fetch Stats (with animated counters)

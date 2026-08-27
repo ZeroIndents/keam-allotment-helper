@@ -36,9 +36,10 @@ through it.
 - **Gunicorn** runs 3 workers, all serving the same Flask app.
 - **SQLite** is the single source of truth. Because SQLite allows one writer at
   a time, the app keeps connections short-lived (`get_db_connection()` per
-  request, closed in `finally`), uses the built-in indexes
-  (`idx_fast_matrix`, `idx_fast_line`), and rate-limit bookkeeping is done in
-  `BEGIN IMMEDIATE` transactions (see below).
+  request, closed in `finally`), ensures the built-in indexes exist on startup
+  (`_ensure_db_indexes()` — `idx_fast_matrix`, `idx_fast_line`,
+  `idx_fast_year_rank`, `idx_fast_rank`, `idx_fast_reg`, `idx_fast_appl`), and
+  rate-limit bookkeeping is done in `BEGIN IMMEDIATE` transactions (see below).
 - The database is **read-only from the app's point of view** — it is written
   only by `offline_parser.py` during a data import. No write path exists in the
   running web app.
@@ -57,6 +58,11 @@ through it.
    - `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`,
    - `Strict-Transport-Security`, `Referrer-Policy`, `Permissions-Policy`.
 
+   HTML pages send `Cache-Control: no-cache, must-revalidate` (revalidation
+   only — **not** `no-store`) so Google's renderer can keep the JS-rendered
+   copy of each page. `no-store` on HTML + JS-only content reads as an empty
+   page to Google and produces soft 404s in Search Console.
+
 ## The client IP problem
 
 Behind nginx, `request.remote_addr` is always `127.0.0.1`. The app therefore
@@ -74,7 +80,8 @@ ignored. This matters for the rate limiter.
 | `/statistics` | Statistics Dashboard | KPIs, cutoff trends, category spreads, phase trends, college×course heatmap, migration tracker. Pulls data from `/api/stats/*`. |
 | `/resizer` | Document Toolkit | Client-side photo/signature resizing, image→PDF, PDF compression. Nothing is uploaded to the server (works in the browser via canvas / pdf.js). |
 | `/trends` | — | Legacy URL, 302-redirects to `/statistics`. |
-| `/sitemap.xml` | — | Static sitemap served from disk. |
+| `/robots.txt` | — | Crawl rules + sitemap pointer. Only `/admin` is disallowed — `/api/` and `/data` must stay crawlable because pages are JS-rendered and fetch their content from them (blocking them causes soft 404s in Google Search Console). |
+| `/sitemap.xml` | — | Sitemap generated on the fly; `lastmod` = template file mtime. |
 
 ## API surface
 

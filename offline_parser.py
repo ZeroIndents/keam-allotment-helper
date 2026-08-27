@@ -199,6 +199,12 @@ def setup_database():
 
     cursor.execute('CREATE INDEX IF NOT EXISTS idx_fast_matrix ON colleges(year, phase, candidate_category, college_name, course_name, rank)')
     cursor.execute('CREATE INDEX IF NOT EXISTS idx_fast_line ON colleges(year, phase, appl_no, college_name, course_name)')
+    # Extra hot-path indexes: default /data sort (year + rank), rank lookups,
+    # and register-number / appl-no searches on the main page.
+    cursor.execute('CREATE INDEX IF NOT EXISTS idx_fast_year_rank ON colleges(year, rank)')
+    cursor.execute('CREATE INDEX IF NOT EXISTS idx_fast_rank ON colleges(rank)')
+    cursor.execute('CREATE INDEX IF NOT EXISTS idx_fast_reg ON colleges(register_number)')
+    cursor.execute('CREATE INDEX IF NOT EXISTS idx_fast_appl ON colleges(appl_no)')
 
     conn.commit()
     return conn

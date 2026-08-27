@@ -70,11 +70,19 @@ CREATE TABLE colleges (
 
 CREATE INDEX idx_fast_matrix ON colleges(year, phase, candidate_category, college_name, course_name, rank);
 CREATE INDEX idx_fast_line   ON colleges(year, phase, appl_no, college_name, course_name);
+CREATE INDEX idx_fast_year_rank ON colleges(year, rank);
+CREATE INDEX idx_fast_rank      ON colleges(rank);
+CREATE INDEX idx_fast_reg       ON colleges(register_number);
+CREATE INDEX idx_fast_appl      ON colleges(appl_no);
 ```
 
-The two indexes cover the hot query shapes: the statistics drill-downs
-(`year/phase/category/college/course/rank`) and the DataTables `/data` filters
-(`year/phase/appl_no/college/course`).
+The indexes cover the hot query shapes: the statistics drill-downs
+(`year/phase/category/college/course/rank`), the DataTables `/data` filters
+(`year/phase/appl_no/college/course`), the default `/data` sort (`year + rank`),
+rank lookups (`rank`), and register-number / application-number searches
+(`register_number`, `appl_no`). `app.py` also re-runs the same `CREATE INDEX
+IF NOT EXISTS` statements on startup (`_ensure_db_indexes()`), so a DB built
+by an older parser gets its missing indexes automatically.
 
 ## Dedup & ordering
 

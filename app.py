@@ -1,5 +1,5 @@
-from flask import Flask, render_template, request, jsonify, redirect, url_for, send_from_directory
-from datetime import timedelta
+from flask import Flask, render_template, request, jsonify, redirect, url_for, send_file
+from datetime import datetime, timedelta
 import sqlite3
 import os
 import time
@@ -121,6 +121,59 @@ KEAM_COURSES = {code: f"{code} - {name}" for code, name in KEAM_COURSES.items()}
 STATS_PHASES = ('Phase1', 'Phase2', 'Phase3')
 STATS_PHASE_SQL = "AND phase IN ('Phase1','Phase2','Phase3')"
 
+# --- SEO / SEARCH-ENGINE INDEXING ---
+SITE_URL = "https://gavinjoseph.in"
+
+# (path, template, priority, changefreq) — drives the generated sitemap.xml
+SITEMAP_PAGES = [
+    ("/", "index.html", "1.00", "daily"),
+    ("/options", "options.html", "0.90", "weekly"),
+    ("/predictor", "predictor.html", "0.80", "weekly"),
+    ("/guide", "guide.html", "0.80", "weekly"),
+    ("/resizer", "resizer.html", "0.80", "monthly"),
+    ("/counselling", "counselling.html", "0.70", "monthly"),
+    ("/statistics", "statistics.html", "0.70", "weekly"),
+]
+
+# Idempotent index bootstrap. The DB is a build artifact (written by
+# offline_parser.py), but ensuring the hot-path indexes exist here too keeps
+# /data and /api lookups fast even when the DB was created by an older
+# parser. Only missing indexes are built, so repeated worker boots are no-ops
+# after the first one. Fails open — app startup must never depend on the DB.
+DB_INDEXES = {
+    "idx_fast_matrix": "CREATE INDEX IF NOT EXISTS idx_fast_matrix ON colleges(year, phase, candidate_category, college_name, course_name, rank)",
+    "idx_fast_line": "CREATE INDEX IF NOT EXISTS idx_fast_line ON colleges(year, phase, appl_no, college_name, course_name)",
+    "idx_fast_year_rank": "CREATE INDEX IF NOT EXISTS idx_fast_year_rank ON colleges(year, rank)",
+    "idx_fast_rank": "CREATE INDEX IF NOT EXISTS idx_fast_rank ON colleges(rank)",
+    "idx_fast_reg": "CREATE INDEX IF NOT EXISTS idx_fast_reg ON colleges(register_number)",
+    "idx_fast_appl": "CREATE INDEX IF NOT EXISTS idx_fast_appl ON colleges(appl_no)",
+}
+
+
+def _ensure_db_indexes():
+    """Create missing DB indexes (if the DB file exists). Checks which indexes
+    already exist first, then builds only the gaps; retries briefly to tolerate
+    concurrent gunicorn workers doing the same thing."""
+    if not os.path.exists(DB_PATH):
+        return
+    for attempt in range(3):
+        try:
+            conn = sqlite3.connect(DB_PATH, timeout=10)
+            try:
+                existing = {r[1] for r in conn.execute("PRAGMA index_list('colleges')")}
+                for name, ddl in DB_INDEXES.items():
+                    if name not in existing:
+                        conn.execute(ddl)
+                conn.commit()
+            finally:
+                conn.close()
+            return
+        except sqlite3.Error:
+            time.sleep(0.5)
+
+
+_ensure_db_indexes()
+
 
 def get_db_connection():
     conn = sqlite3.connect(DB_PATH)
@@ -185,48 +238,132 @@ def global_api_rate_limit():
 
 
 # --- UI ROUTES ---
-@app.route('/statistics')
+@app.route('/keam/statistics')
 def statistics_portal():
     return render_template('statistics.html')
 
 
+# --- PORTFOLIO LANDING PAGE ---
+PORTFOLIO_DIR = os.path.join(BASE_DIR, 'static', 'portfolio')
+
+
 @app.route('/')
-def main_allotment():
+def portfolio_landing():
+    """Serve the React portfolio landing page."""
+    return send_file(os.path.join(PORTFOLIO_DIR, 'index.html'))
+
+
+# --- KEAM ALLLOTMENT HELPER (under /keam/) ---
+
+@app.route('/keam/')
+@app.route('/keam')
+def keam_allotment():
     return render_template('index.html')
 
 
-@app.route('/predictor')
+@app.route('/keam/predictor')
 def rank_predictor():
     return render_template('predictor.html')
 
 
-@app.route('/resizer')
+@app.route('/keam/resizer')
 def photo_resizer():
     return render_template('resizer.html')
 
-@app.route('/options')
+@app.route('/keam/options')
 def options_portal():
     return render_template('options.html')
 
-@app.route('/counselling')
+@app.route('/keam/counselling')
 def counselling_portal():
     return render_template('counselling.html')
 
 
-@app.route('/guide')
+@app.route('/keam/guide')
 def how_to_use_guide():
     return render_template('guide.html')
 
 
-@app.route('/trends')
+@app.route('/keam/trends')
 def trends_portal():
     # trends.html no longer exists — point visitors at the statistics dashboard.
     return redirect(url_for('statistics_portal'))
 
 
+# Redirect old root-level KEAM paths to /keam/* for backward compatibility
+@app.route('/statistics')
+def statistics_redirect():
+    return redirect(url_for('statistics_portal'))
+
+
+@app.route('/predictor')
+def predictor_redirect():
+    return redirect(url_for('rank_predictor'))
+
+
+@app.route('/resizer')
+def resizer_redirect():
+    return redirect(url_for('photo_resizer'))
+
+
+@app.route('/options')
+def options_redirect():
+    return redirect(url_for('options_portal'))
+
+
+@app.route('/counselling')
+def counselling_redirect():
+    return redirect(url_for('counselling_portal'))
+
+
+@app.route('/guide')
+def guide_redirect():
+    return redirect(url_for('how_to_use_guide'))
+
+
+@app.route('/trends')
+def trends_redirect():
+    return redirect(url_for('trends_portal'))
+
+
+@app.route('/robots.txt')
+def robots_txt():
+    """Crawl rules + sitemap pointer. NOTE: /api/ and /data must NOT be
+    disallowed — the pages are JS-rendered and fetch their content (allotment
+    table, charts) from those endpoints. Blocking them would make every page
+    look empty to Google's renderer (soft 404s). Only admin is private."""
+    robots = (
+        "User-agent: *\n"
+        "Allow: /\n"
+        "Disallow: /admin\n"
+        f"Sitemap: {SITE_URL}/sitemap.xml\n"
+    )
+    return app.response_class(robots, mimetype='text/plain')
+
+
 @app.route('/sitemap.xml')
 def sitemap():
-    return send_from_directory(BASE_DIR, 'sitemap.xml')
+    """Generate the sitemap on the fly so lastmod always reflects the real
+    last-modified time of each page's template file."""
+    urls = []
+    for path, template, priority, changefreq in SITEMAP_PAGES:
+        try:
+            template_path = os.path.join(BASE_DIR, 'templates', template)
+            lastmod = datetime.fromtimestamp(os.path.getmtime(template_path)).date().isoformat()
+        except OSError:
+            lastmod = datetime.now().date().isoformat()
+        urls.append(
+            "  <url>\n"
+            f"    <loc>{SITE_URL}{path}</loc>\n"
+            f"    <lastmod>{lastmod}</lastmod>\n"
+            f"    <changefreq>{changefreq}</changefreq>\n"
+            f"    <priority>{priority}</priority>\n"
+            "  </url>"
+        )
+    xml = ('<?xml version="1.0" encoding="UTF-8"?>\n'
+           '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+           + '\n'.join(urls) + '\n</urlset>\n')
+    return app.response_class(xml, mimetype='application/xml')
 
 
 # --- API ROUTES ---
@@ -873,14 +1010,16 @@ def data():
 
         # ==========================================
         # MULTI-CHOICE CATEGORY FILTER
-        # Using LIKE to match substrings and ignore case/trailing spaces
+        # Exact equality so idx_fast_matrix is used. Values come from the
+        # /api/categories dropdown (already stripped/cleaned), and the parser
+        # cleans cells on insert — exact match is both correct and indexed.
         # ==========================================
         if category_raw:
             categories = [c.strip() for c in category_raw.split(',') if c.strip()]
             if categories:
-                cat_conditions = ["UPPER(candidate_category) LIKE UPPER(?)"] * len(categories)
+                cat_conditions = ["candidate_category = ?"] * len(categories)
                 query += " AND (" + " OR ".join(cat_conditions) + ")"
-                params.extend([f"%{c}%" for c in categories])
+                params.extend(categories)
 
         if college:
             query += " AND college_name = ?"
@@ -889,6 +1028,9 @@ def data():
             query += " AND course_name = ?"
             params.append(course)
         if seat:
+            # Seat types include compound codes (SM-MU, FL-EZ...) — substring
+            # match preserves the historical filter behavior. No index on
+            # seat_type, so LIKE costs nothing.
             query += " AND UPPER(seat_type) LIKE UPPER(?)"
             params.append(f"%{seat}%")
 
@@ -1031,23 +1173,36 @@ def add_security_headers(resp):
     resp.headers.setdefault('Referrer-Policy', 'strict-origin-when-cross-origin')
     resp.headers.setdefault('Strict-Transport-Security', 'max-age=31536000; includeSubDomains')
     resp.headers.setdefault('Permissions-Policy', 'geolocation=(), microphone=(), camera=()')
-    # Never cache HTML pages: stale copies keep old CSP headers that can
-    # block CDN scripts (caused blank tables after the CSP was tightened).
+    # HTML pages: allow caching with revalidation (no-cache, not no-store) so
+    # Google's renderer can keep the JS-rendered copy of the page; if we sent
+    # no-store, Google may re-render every time or drop JS-only content, which
+    # shows up as soft 404s in Search Console. Browsers still revalidate, so
+    # stale CSP headers can't block CDN scripts.
     if resp.content_type.startswith('text/html'):
-        resp.headers.setdefault('Cache-Control', 'no-cache, no-store, must-revalidate')
+        resp.headers.setdefault('Cache-Control', 'no-cache, must-revalidate')
         resp.headers.setdefault('Pragma', 'no-cache')
     resp.headers.setdefault(
         'Content-Security-Policy',
         "default-src 'self'; script-src 'self' 'unsafe-inline' https://code.jquery.com "
         "https://cdn.jsdelivr.net https://cdn.datatables.net "
-        "https://cdnjs.cloudflare.com https://static.cloudflareinsights.com; style-src 'self' "
+        "https://cdnjs.cloudflare.com https://static.cloudflareinsights.com https://fonts.googleapis.com; style-src 'self' "
         "'unsafe-inline' https://cdn.jsdelivr.net https://code.jquery.com https://cdn.datatables.net "
-        "https://cdnjs.cloudflare.com; img-src 'self' data: blob: https:; "
-        "font-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; connect-src 'self' blob: "
+        "https://cdnjs.cloudflare.com https://fonts.googleapis.com; img-src 'self' data: blob: https:; "
+        "font-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.gstatic.com; connect-src 'self' blob: "
         "https://static.cloudflareinsights.com https://cloudflareinsights.com; frame-ancestors 'none'; base-uri 'self'; object-src 'none'; "
         "worker-src 'self' blob: https://cdnjs.cloudflare.com"
     )
     return resp
+
+
+# --- CATCH-ALL: serve React SPA for unmatched routes ---
+@app.route('/<path:path>')
+def catch_all(path):
+    """Any route not matched above gets the React portfolio SPA."""
+    index_path = os.path.join(PORTFOLIO_DIR, 'index.html')
+    if os.path.exists(index_path):
+        return send_file(index_path)
+    return 'Not Found', 404
 
 
 if __name__ == '__main__':
